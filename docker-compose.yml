@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=sqlite:///./test.db   # или PostgreSQL
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
