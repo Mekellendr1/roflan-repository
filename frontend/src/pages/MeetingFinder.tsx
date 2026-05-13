@@ -1,20 +1,51 @@
-import { useState } from 'react'
-import { employees, meetingSlots } from '../lib/mockData'
-import type { MeetingSlot } from '../lib/types'
+import { useEffect, useState } from 'react'
+import { getEmployees, suggestMeetingTime } from '../api/queries'
+import type { Employee, MeetingSlot } from '../lib/types'
 import Avatar from '../components/Avatar'
 import Badge from '../components/Badge'
 import Icon from '../components/Icon'
 import TopBar from '../components/TopBar'
 
 export default function MeetingFinder() {
-  const [selected, setSelected] = useState<string[]>(['e1', 'e2', 'e3', 'e6'])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [selected, setSelected] = useState<string[]>([])
   const [duration, setDuration] = useState('60')
-  const [showResults, setShowResults] = useState(true)
+  const [slots, setSlots] = useState<MeetingSlot[]>([])
+  const [loading, setLoading] = useState(false)
+  const [searched, setSearched] = useState(false)
+
+  // Грузим список сотрудников один раз
+  useEffect(() => {
+    getEmployees().then((data) => {
+      setEmployees(data)
+      // По умолчанию — первые 4
+      setSelected(data.slice(0, 4).map((e) => e.id))
+    })
+  }, [])
 
   const selectedEmps = employees.filter((e) => selected.includes(e.id))
 
   const toggle = (id: string) => {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
+  }
+
+  const handleSearch = async () => {
+    if (selected.length < 2) return
+    setLoading(true)
+    try {
+      const result = await suggestMeetingTime({
+        employee_ids: selected,
+        duration_minutes: parseInt(duration),
+        window_days: 7,
+        priority: 'comfort',
+      })
+      setSlots(result)
+      setSearched(true)
+    } catch (err) {
+      console.error('Search failed:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -26,7 +57,9 @@ export default function MeetingFinder() {
 
       <div className="p-8">
         <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
-          <p className="text-sm font-semibold text-stone-700 mb-3">Участники</p>
+          <p className="text-sm font-semibold text-stone-700 mb-3">
+            Участники ({selectedEmps.length})
+          </p>
           <div className="flex flex-wrap gap-2 mb-5 min-h-[40px] p-2 border border-stone-200 rounded-lg bg-stone-50">
             {selectedEmps.map((emp) => (
               <button
@@ -36,14 +69,34 @@ export default function MeetingFinder() {
               >
                 <Avatar initials={emp.initials} color={emp.color} size="sm" />
                 {emp.name}
-                <Icon name="x" className="w-3.5 h-3.5 text-stone-400 group-hover:text-red-500" />
+                <Icon
+                  name="x"
+                  className="w-3.5 h-3.5 text-stone-400 group-hover:text-red-500"
+                />
               </button>
             ))}
-            <button className="flex items-center gap-1.5 text-sm text-stone-500 px-3 py-1.5 hover:bg-white rounded-md">
-              <Icon name="plus" className="w-4 h-4" />
-              добавить
-            </button>
           </div>
+
+          {/* Доступные для добавления */}
+          {employees.filter((e) => !selected.includes(e.id)).length > 0 && (
+            <div className="mb-5">
+              <p className="text-xs text-stone-500 uppercase tracking-wide mb-1.5">Добавить:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {employees
+                  .filter((e) => !selected.includes(e.id))
+                  .map((emp) => (
+                    <button
+                      key={emp.id}
+                      onClick={() => toggle(emp.id)}
+                      className="flex items-center gap-1 text-xs text-stone-600 px-2 py-1 hover:bg-stone-100 rounded-md border border-stone-200"
+                    >
+                      <Icon name="plus" className="w-3 h-3" />
+                      {emp.name.split(' ')[0]} {emp.tzShort}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-4 mb-5">
             <div>
@@ -66,8 +119,6 @@ export default function MeetingFinder() {
               </p>
               <select className="w-full px-3 py-2 border border-stone-200 rounded-lg bg-white text-sm">
                 <option>Эта неделя</option>
-                <option>Следующая неделя</option>
-                <option>Ближайшие 2 недели</option>
               </select>
             </div>
             <div>
@@ -76,28 +127,29 @@ export default function MeetingFinder() {
               </p>
               <select className="w-full px-3 py-2 border border-stone-200 rounded-lg bg-white text-sm">
                 <option>Комфорт всех</option>
-                <option>Как можно скорее</option>
-                <option>Без переработок</option>
               </select>
             </div>
           </div>
 
           <button
-            onClick={() => setShowResults(true)}
-            className="px-5 py-2.5 bg-lime-500 text-stone-900 rounded-lg font-semibold hover:bg-lime-400 flex items-center gap-2 shadow-sm"
+            onClick={handleSearch}
+            disabled={loading || selected.length < 2}
+            className="px-5 py-2.5 bg-lime-500 text-stone-900 rounded-lg font-semibold hover:bg-lime-400 flex items-center gap-2 shadow-sm disabled:opacity-50"
           >
             <Icon name="search" className="w-4 h-4" />
-            Найти оптимальное время
+            {loading ? 'Ищу...' : 'Найти оптимальное время'}
           </button>
         </div>
 
-        {showResults && (
+        {searched && (
           <>
             <p className="text-sm font-semibold text-stone-700 mb-3">
-              Топ-4 слота, отсортированы по удобству
+              {slots.length > 0
+                ? `Топ-${slots.length} слотов, отсортированы по удобству`
+                : 'Подходящих слотов не найдено'}
             </p>
             <div className="space-y-3">
-              {meetingSlots.map((slot, i) => (
+              {slots.map((slot, i) => (
                 <SlotCard key={i} slot={slot} />
               ))}
             </div>
@@ -110,7 +162,11 @@ export default function MeetingFinder() {
 
 function SlotCard({ slot }: { slot: MeetingSlot }) {
   const scoreColor =
-    slot.score >= 80 ? 'text-emerald-600' : slot.score >= 60 ? 'text-amber-700' : 'text-red-600'
+    slot.score >= 80
+      ? 'text-emerald-600'
+      : slot.score >= 60
+        ? 'text-amber-700'
+        : 'text-red-600'
   return (
     <div
       className={`bg-white border rounded-xl p-5 ${
@@ -142,9 +198,6 @@ function SlotCard({ slot }: { slot: MeetingSlot }) {
           }`}
         >
           Создать встречу
-        </button>
-        <button className="px-4 py-1.5 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100 border border-stone-200">
-          Показать на карте
         </button>
       </div>
     </div>

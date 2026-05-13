@@ -1,4 +1,5 @@
-import { conflicts, employees, riskHistory } from '../lib/mockData'
+import { useEffect, useState } from 'react'
+import { getEmployeeDetail, type EmployeeDetail } from '../api/queries'
 import { colorClasses, severityMap } from '../lib/utils'
 import Avatar from '../components/Avatar'
 import Badge from '../components/Badge'
@@ -6,22 +7,67 @@ import Icon from '../components/Icon'
 import RiskScore from '../components/RiskScore'
 import TopBar from '../components/TopBar'
 
-interface EmployeeDetailProps {
+interface EmployeeDetailPageProps {
   empId: string
   setRoute: (route: string) => void
 }
 
-export default function EmployeeDetail({ empId, setRoute }: EmployeeDetailProps) {
-  const emp = employees.find((e) => e.id === empId)
-  if (!emp) return <div className="p-8">Не найден</div>
+export default function EmployeeDetailPage({ empId, setRoute }: EmployeeDetailPageProps) {
+  const [emp, setEmp] = useState<EmployeeDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const empConflicts = conflicts.filter((c) => c.empId === empId)
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    getEmployeeDetail(empId)
+      .then((data) => {
+        if (!cancelled) setEmp(data)
+      })
+      .catch((err) => {
+        console.error(err)
+        if (!cancelled) setError('Не удалось загрузить данные сотрудника')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [empId])
 
-  // SVG для графика риска
+  if (loading) {
+    return (
+      <div className="p-8">
+        <TopBar title="Загрузка..." />
+        <div className="text-center py-12 text-stone-500">Загрузка...</div>
+      </div>
+    )
+  }
+
+  if (error || !emp) {
+    return (
+      <div className="p-8">
+        <TopBar title="Ошибка">
+          <button
+            onClick={() => setRoute('dashboard')}
+            className="px-3 py-2 text-sm border border-stone-200 rounded-lg hover:bg-stone-50"
+          >
+            ← Назад
+          </button>
+        </TopBar>
+        <p className="text-stone-500">{error || 'Сотрудник не найден'}</p>
+      </div>
+    )
+  }
+
+  const riskHistory = emp.risk_history || []
   const w = 700
   const h = 120
+  const lastScore = riskHistory[riskHistory.length - 1] || emp.riskScore
   const points = riskHistory
-    .map((v, i) => `${(i / (riskHistory.length - 1)) * w},${h - (v / 100) * h}`)
+    .map((v, i) => `${(i / Math.max(riskHistory.length - 1, 1)) * w},${h - (v / 100) * h}`)
     .join(' ')
 
   return (
@@ -44,7 +90,8 @@ export default function EmployeeDetail({ empId, setRoute }: EmployeeDetailProps)
               <p className="text-xl font-bold text-stone-900">{emp.name}</p>
               <div className="flex items-center gap-4 mt-1 text-sm text-stone-500">
                 <span className="flex items-center gap-1">
-                  <Icon name="pin" className="w-3.5 h-3.5" /> {emp.tz.split('/')[1]} (UTC
+                  <Icon name="pin" className="w-3.5 h-3.5" />
+                  {emp.tz.split('/')[1]} (UTC
                   {emp.tzOffset >= 0 ? '+' + emp.tzOffset : emp.tzOffset})
                 </span>
                 <span className="flex items-center gap-1">
@@ -73,53 +120,45 @@ export default function EmployeeDetail({ empId, setRoute }: EmployeeDetailProps)
           </div>
         </div>
 
-        <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-stone-900">Риск-скор за 4 недели</h2>
-            <p className="text-xs text-stone-500">обновлено только что</p>
+        {riskHistory.length > 0 && (
+          <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-stone-900">
+                Риск-скор за {riskHistory.length} дней
+              </h2>
+              <p className="text-xs text-stone-500">обновлено только что</p>
+            </div>
+            <svg viewBox={`0 0 ${w} ${h + 20}`} className="w-full" style={{ height: '140px' }}>
+              <line x1="0" y1={h * 0.3} x2={w} y2={h * 0.3} stroke="#f5f5f4" strokeWidth="1" />
+              <line x1="0" y1={h * 0.7} x2={w} y2={h * 0.7} stroke="#f5f5f4" strokeWidth="1" />
+              <text x="0" y={h * 0.3 - 2} fontSize="10" fill="#a8a29e">
+                70 — высокий
+              </text>
+              <text x="0" y={h * 0.7 - 2} fontSize="10" fill="#a8a29e">
+                30 — средний
+              </text>
+              <polyline
+                points={points}
+                fill="none"
+                stroke="#dc2626"
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+              <circle cx={w} cy={h - (lastScore / 100) * h} r="5" fill="#dc2626" />
+            </svg>
           </div>
-          <svg viewBox={`0 0 ${w} ${h + 20}`} className="w-full" style={{ height: '140px' }}>
-            <line x1="0" y1={h * 0.3} x2={w} y2={h * 0.3} stroke="#f5f5f4" strokeWidth="1" />
-            <line x1="0" y1={h * 0.7} x2={w} y2={h * 0.7} stroke="#f5f5f4" strokeWidth="1" />
-            <text x="0" y={h * 0.3 - 2} fontSize="10" fill="#a8a29e">
-              70 — высокий
-            </text>
-            <text x="0" y={h * 0.7 - 2} fontSize="10" fill="#a8a29e">
-              30 — средний
-            </text>
-            <polyline
-              points={points}
-              fill="none"
-              stroke="#dc2626"
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-            <circle
-              cx={w}
-              cy={h - (riskHistory[riskHistory.length - 1] / 100) * h}
-              r="5"
-              fill="#dc2626"
-            />
-          </svg>
-          <div className="flex justify-between text-xs text-stone-400 mt-1">
-            <span>15 апр</span>
-            <span>22 апр</span>
-            <span>29 апр</span>
-            <span>6 мая</span>
-            <span>13 мая</span>
-          </div>
-        </div>
+        )}
 
         <div className="bg-white border border-stone-200 rounded-xl p-6">
           <h2 className="text-base font-bold text-stone-900 mb-4">
-            Активные конфликты ({empConflicts.length})
+            Активные конфликты ({emp.active_conflicts.length})
           </h2>
           <div className="space-y-2">
-            {empConflicts.length === 0 ? (
+            {emp.active_conflicts.length === 0 ? (
               <p className="text-stone-500 text-sm">Нет активных конфликтов 🎉</p>
             ) : (
-              empConflicts.map((c) => {
+              emp.active_conflicts.map((c) => {
                 const sev = severityMap[c.severity]
                 const borderColor =
                   sev.color === 'stone'

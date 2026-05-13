@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
-import { conflicts, employees } from '../lib/mockData'
-import { colorClasses } from '../lib/utils'
+import { useEffect, useState } from 'react'
+import { getEmployees, getStats, recalculate, type DashboardStats } from '../api/queries'
 import type { Employee } from '../lib/types'
+import { colorClasses } from '../lib/utils'
 import Avatar from '../components/Avatar'
 import Badge from '../components/Badge'
 import Icon from '../components/Icon'
@@ -14,41 +14,88 @@ interface DashboardProps {
 
 export default function Dashboard({ setRoute }: DashboardProps) {
   const [tzFilter, setTzFilter] = useState<string>('all')
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [recalculating, setRecalculating] = useState(false)
 
-  const sorted = useMemo(() => {
-    let list = [...employees]
-    if (tzFilter !== 'all') list = list.filter((e) => e.tzShort === tzFilter)
-    list.sort((a, b) => b.riskScore - a.riskScore)
-    return list
+  // Загружаем данные при монтировании и при смене фильтра
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    Promise.all([getEmployees({ tz: tzFilter }), getStats()])
+      .then(([emps, st]) => {
+        if (cancelled) return
+        const sorted = [...emps].sort((a, b) => b.riskScore - a.riskScore)
+        setEmployees(sorted)
+        setStats(st)
+      })
+      .catch((err) => console.error('Failed to load dashboard:', err))
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [tzFilter])
 
-  const stats = {
-    conflicts: conflicts.length,
-    atRisk: employees.filter((e) => e.riskScore >= 70).length,
-    avgLoad: Math.round(employees.reduce((s, e) => s + e.workload, 0) / employees.length),
-    stale: employees.filter((e) => e.scheduleUpdated > 14).length,
+  const handleRecalculate = async () => {
+    setRecalculating(true)
+    try {
+      await recalculate()
+      // Перезагружаем данные после пересчёта
+      const [emps, st] = await Promise.all([getEmployees({ tz: tzFilter }), getStats()])
+      setEmployees([...emps].sort((a, b) => b.riskScore - a.riskScore))
+      setStats(st)
+    } catch (err) {
+      console.error('Recalculate failed:', err)
+    } finally {
+      setRecalculating(false)
+    }
   }
 
   return (
     <div className="animate-fade-in">
       <TopBar
         title="Дашборд команды"
-        subtitle="Backend · 42 сотрудника · 5 часовых поясов"
+        subtitle={`${employees.length} сотрудников · 5 часовых поясов`}
+        onRecalculate={handleRecalculate}
+        recalculating={recalculating}
       >
         <select className="px-3 py-2 text-sm border border-stone-200 rounded-lg bg-white">
           <option>Все команды</option>
-          <option>Backend</option>
-          <option>Frontend</option>
-          <option>QA</option>
         </select>
       </TopBar>
 
       <div className="p-8">
+        {/* Метрики сверху */}
         <div className="grid grid-cols-4 gap-4 mb-8">
-          <StatCard label="Активные конфликты" value={stats.conflicts} icon="conflicts" trend="+3 за неделю" />
-          <StatCard label="В зоне риска" value={stats.atRisk} icon="users" color="red" trend="критический" />
-          <StatCard label="Средняя загрузка" value={`${stats.avgLoad}%`} icon="clock" trend="норма 80%" />
-          <StatCard label="Графиков устарело" value={stats.stale} icon="calendar" color="amber" trend="старше 14 дн" />
+          <StatCard
+            label="Активные конфликты"
+            value={stats?.conflicts ?? '—'}
+            icon="conflicts"
+            trend="за последние 7 дней"
+          />
+          <StatCard
+            label="В зоне риска"
+            value={stats?.at_risk ?? '—'}
+            icon="users"
+            color="red"
+            trend="risk ≥ 70"
+          />
+          <StatCard
+            label="Средняя загрузка"
+            value={stats ? `${stats.avg_load}%` : '—'}
+            icon="clock"
+            trend="норма 80%"
+          />
+          <StatCard
+            label="Графиков устарело"
+            value={stats?.stale ?? '—'}
+            icon="calendar"
+            color="amber"
+            trend="старше 14 дн"
+          />
         </div>
 
         <div className="flex items-center justify-between mb-4">
@@ -71,15 +118,23 @@ export default function Dashboard({ setRoute }: DashboardProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {sorted.map((emp) => (
-            <EmployeeCard
-              key={emp.id}
-              emp={emp}
-              onClick={() => setRoute('emp/' + emp.id)}
-            />
-          ))}
-        </div>
+        {loading && employees.length === 0 ? (
+          <div className="text-center py-12 text-stone-500">Загрузка...</div>
+        ) : employees.length === 0 ? (
+          <div className="text-center py-12 text-stone-500">
+            Сотрудников не найдено. Проверь что бэк запущен и БД заполнена через seed.py
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {employees.map((emp) => (
+              <EmployeeCard
+                key={emp.id}
+                emp={emp}
+                onClick={() => setRoute('emp/' + emp.id)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -120,7 +175,8 @@ function EmployeeCard({ emp, onClick }: { emp: Employee; onClick: () => void }) 
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-stone-900 truncate">{emp.name}</p>
           <p className="text-xs text-stone-500 truncate">
-            {emp.role} · {emp.tzShort} (UTC{emp.tzOffset >= 0 ? '+' + emp.tzOffset : emp.tzOffset})
+            {emp.role} · {emp.tzShort} (UTC
+            {emp.tzOffset >= 0 ? '+' + emp.tzOffset : emp.tzOffset})
           </p>
         </div>
         <div className="text-right">
