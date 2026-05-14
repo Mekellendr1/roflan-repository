@@ -1,30 +1,20 @@
-import { useEffect, useState } from 'react'
-import { getConflicts } from '../api/queries'
-import type { Conflict, ConflictSeverity, ConflictType } from '../lib/types'
+import { useMemo, useState } from 'react'
+import { conflicts } from '../lib/mockData'
 import { severityMap } from '../lib/utils'
+import type { ConflictSeverity, ConflictType } from '../lib/types'
 import Badge from '../components/Badge'
 import TopBar from '../components/TopBar'
 
 export default function Conflicts() {
   const [severity, setSeverity] = useState<ConflictSeverity | 'all'>('all')
   const [type, setType] = useState<ConflictType | 'all'>('all')
-  const [conflicts, setConflicts] = useState<Conflict[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    getConflicts({ severity, type })
-      .then((data) => {
-        if (!cancelled) setConflicts(data)
-      })
-      .catch((err) => console.error('Failed to load conflicts:', err))
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
+  const filtered = useMemo(() => {
+    return conflicts.filter((c) => {
+      if (severity !== 'all' && c.severity !== severity) return false
+      if (type !== 'all' && c.type !== type) return false
+      return true
+    })
   }, [severity, type])
 
   const activeCount = conflicts.filter((c) => c.severity !== 'low').length
@@ -69,37 +59,29 @@ export default function Conflicts() {
           </select>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12 text-stone-500">Загрузка...</div>
-        ) : conflicts.length === 0 ? (
-          <div className="text-center py-12 text-stone-500">
-            Конфликтов не найдено. Если только что запустил сервер — нажми "Пересчитать" на дашборде.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {conflicts.map((c) => {
-              const sev = severityMap[c.severity]
-              return (
-                <div
-                  key={c.id}
-                  className="bg-white border border-stone-200 hover:border-stone-300 rounded-xl px-5 py-4 flex items-center gap-4 transition-colors"
-                >
-                  <Badge color={sev.color}>{sev.label}</Badge>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-stone-900">{c.title}</p>
-                    <p className="text-sm text-stone-500 mt-0.5">{c.desc}</p>
-                  </div>
-                  <button className="px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-lg border border-stone-200">
-                    Детали
-                  </button>
-                  <button className="px-3 py-1.5 text-sm font-medium text-white bg-stone-900 hover:bg-stone-800 rounded-lg">
-                    Решить
-                  </button>
+        <div className="space-y-2">
+          {filtered.map((c) => {
+            const sev = severityMap[c.severity]
+            return (
+              <div
+                key={c.id}
+                className="bg-white border border-stone-200 hover:border-stone-300 rounded-xl px-5 py-4 flex items-center gap-4 transition-colors"
+              >
+                <Badge color={sev.color}>{sev.label}</Badge>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-stone-900">{c.title}</p>
+                  <p className="text-sm text-stone-500 mt-0.5">{c.desc}</p>
                 </div>
-              )
-            })}
-          </div>
-        )}
+                <button className="px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-lg border border-stone-200">
+                  Детали
+                </button>
+                <button className="px-3 py-1.5 text-sm font-medium text-white bg-stone-900 hover:bg-stone-800 rounded-lg">
+                  Решить
+                </button>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
