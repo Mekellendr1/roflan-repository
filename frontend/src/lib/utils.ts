@@ -1,22 +1,38 @@
-import type { RiskColor, ConflictSeverity } from './types'
+import type { RiskLevel } from './types'
 
-// Цветовые наборы для риск-уровней — используются везде
-export const colorClasses: Record<RiskColor, { bg: string; text: string; border: string; soft: string }> = {
-  red:   { bg: 'bg-red-50',     text: 'text-red-700',     border: 'border-red-500',     soft: 'bg-red-100' },
-  amber: { bg: 'bg-amber-50',   text: 'text-amber-800',   border: 'border-amber-500',   soft: 'bg-amber-100' },
-  green: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-500', soft: 'bg-emerald-100' },
+export const riskColor: Record<
+  RiskLevel,
+  { text: string; bg: string; border: string; label: string; dot: string }
+> = {
+  low: { text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-500', label: 'низкий', dot: 'bg-emerald-500' },
+  medium: { text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-500', label: 'средний', dot: 'bg-amber-500' },
+  high: { text: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-500', label: 'высокий', dot: 'bg-orange-500' },
+  critical: { text: 'text-red-700', bg: 'bg-red-50', border: 'border-red-500', label: 'критический', dot: 'bg-red-500' },
 }
 
-// Конфиг для серьёзности конфликтов
-export const severityMap: Record<ConflictSeverity, { label: string; color: 'red' | 'amber' | 'stone' }> = {
-  critical: { label: 'КРИТ', color: 'red' },
-  warning:  { label: 'СРЕД', color: 'amber' },
-  low:      { label: 'НИЗ',  color: 'stone' },
+export const groupColors = {
+  red: 'border-red-500 bg-red-50',
+  amber: 'border-amber-500 bg-amber-50',
+  green: 'border-emerald-500 bg-emerald-50',
+  blue: 'border-blue-500 bg-blue-50',
+  stone: 'border-stone-400 bg-stone-50',
 }
 
-// Какой цвет у риск-скора по значению
-export function riskScoreToColor(score: number): RiskColor {
-  if (score >= 70) return 'red'
-  if (score >= 40) return 'amber'
+export const badgeColors = {
+  red: 'bg-red-50 text-red-700 border-red-200',
+  amber: 'bg-amber-50 text-amber-800 border-amber-200',
+  green: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  blue: 'bg-blue-50 text-blue-700 border-blue-200',
+  stone: 'bg-stone-100 text-stone-700 border-stone-200',
+  lime: 'bg-lime-100 text-lime-800 border-lime-300',
+}
+
+export function pct(v: number): string {
+  return `${Math.round(v * 100)}%`
+}
+
+export function avatarColor(level: RiskLevel): 'red' | 'amber' | 'green' | 'blue' {
+  if (level === 'critical' || level === 'high') return 'red'
+  if (level === 'medium') return 'amber'
   return 'green'
 }

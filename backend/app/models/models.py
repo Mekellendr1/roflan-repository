@@ -1,17 +1,11 @@
-"""SQLAlchemy модели. Все таблицы в одном файле для простоты."""
+"""Модели БД. Хранят СЫРЫЕ данные (профиль, события, исключения).
 
-from datetime import datetime, time
+Показатели (Ai, Ci, Li, Ri ...) НЕ хранятся — они считаются на лету
+сервисом app/services/metrics.py по формулам из ТЗ. Это удовлетворяет
+требование раздела 14 «показатели в работающем коде».
+"""
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    Time,
-)
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -26,109 +20,78 @@ class Employee(Base):
     role: Mapped[str] = mapped_column(String, nullable=False)
     team: Mapped[str] = mapped_column(String, nullable=False)
 
-    timezone: Mapped[str] = mapped_column(String, nullable=False)  # IANA, e.g. Europe/Moscow
-    tz_short: Mapped[str] = mapped_column(String(5), nullable=False)  # для UI
-    tz_offset: Mapped[int] = mapped_column(Integer, nullable=False)  # для UI
-    work_format: Mapped[str] = mapped_column(String, nullable=False)  # office | remote | hybrid
+    # ti — часовой пояс
+    timezone: Mapped[str] = mapped_column(String, nullable=False)
+    tz_short: Mapped[str] = mapped_column(String(8), nullable=False)
+    tz_offset: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    # Базовый график (упрощённо: одно окно пн-пт)
-    work_start: Mapped[time] = mapped_column(Time, nullable=False)
-    work_end: Mapped[time] = mapped_column(Time, nullable=False)
+    # zi — формат работы; hr_format — что записано в HR (может расходиться)
+    work_format: Mapped[str] = mapped_column(String, nullable=False)
+    hr_format: Mapped[str] = mapped_column(String, nullable=False)
 
-    schedule_updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # si — стандартный график (упрощённо: одно окно пн-пт)
+    schedule_days: Mapped[str] = mapped_column(String, default="0,1,2,3,4")
+    work_start: Mapped[int] = mapped_column(Integer, nullable=False)
+    work_end: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    events = relationship("Event", back_populates="employee", cascade="all, delete-orphan")
-    exceptions = relationship("Exception_", back_populates="employee", cascade="all, delete-orphan")
-    conflicts = relationship("Conflict", back_populates="employee", cascade="all, delete-orphan")
+    # ui — дата последнего обновления (ISO-строка)
+    last_update: Mapped[str] = mapped_column(String, nullable=False)
 
+    # признак фактической смены пояса по активности (для Zi)
+    activity_tz_shift: Mapped[bool] = mapped_column(Boolean, default=False)
 
-class Source(Base):
-    __tablename__ = "sources"
-
-    id: Mapped[str] = mapped_column(String, primary_key=True)
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    type: Mapped[str] = mapped_column(String, nullable=False)  # calendar | hr | tasks | manual
-    icon: Mapped[str] = mapped_column(String, default="calendar")
-    status: Mapped[str] = mapped_column(String, default="active")  # active | stale
-    last_sync_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    records_count: Mapped[int] = mapped_column(Integer, default=0)
+    events = relationship(
+        "Event", back_populates="employee", cascade="all, delete-orphan"
+    )
+    exceptions = relationship(
+        "Exception_", back_populates="employee", cascade="all, delete-orphan"
+    )
 
 
 class Event(Base):
-    """Встреча/задача/блок фокус-времени."""
+    """fi — фактическое событие в демо-неделе."""
 
     __tablename__ = "events"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"), nullable=False)
+    employee_id: Mapped[str] = mapped_column(
+        ForeignKey("employees.id"), nullable=False
+    )
     title: Mapped[str] = mapped_column(String, nullable=False)
-    start_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)  # UTC
-    end_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    event_type: Mapped[str] = mapped_column(String, default="meeting")  # meeting | task | focus
-    source_id: Mapped[str | None] = mapped_column(ForeignKey("sources.id"), nullable=True)
-    is_recurring: Mapped[bool] = mapped_column(Boolean, default=False)
+    day: Mapped[int] = mapped_column(Integer, nullable=False)  # 0=Пн..6=Вс
+    start_hour: Mapped[float] = mapped_column(Float, nullable=False)
+    end_hour: Mapped[float] = mapped_column(Float, nullable=False)
+    event_type: Mapped[str] = mapped_column(String, default="meeting")
+    source: Mapped[str] = mapped_column(String, default="Google Calendar")
 
     employee = relationship("Employee", back_populates="events")
 
 
 class Exception_(Base):
-    """Отклонение от базового графика: отпуск, больничный, переработка."""
+    """ai — отсутствие/исключение."""
 
     __tablename__ = "exceptions"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"), nullable=False)
-    type: Mapped[str] = mapped_column(String, nullable=False)  # vacation | sick | day_off
-    start_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    end_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    source_id: Mapped[str | None] = mapped_column(ForeignKey("sources.id"), nullable=True)
+    employee_id: Mapped[str] = mapped_column(
+        ForeignKey("employees.id"), nullable=False
+    )
+    type: Mapped[str] = mapped_column(String, nullable=False)
+    note: Mapped[str] = mapped_column(Text, default="")
+    source: Mapped[str] = mapped_column(String, default="HR System")
 
     employee = relationship("Employee", back_populates="exceptions")
 
 
-class Conflict(Base):
-    """Обнаруженный конфликт. Перезаписывается при каждом /recalculate."""
+class Source(Base):
+    """Источник данных (для окна загрузки)."""
 
-    __tablename__ = "conflicts"
+    __tablename__ = "sources"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
     type: Mapped[str] = mapped_column(String, nullable=False)
-    severity: Mapped[str] = mapped_column(String, nullable=False)  # critical | warning | low
-    title: Mapped[str] = mapped_column(String, nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=False)
-    event_id: Mapped[str | None] = mapped_column(ForeignKey("events.id"), nullable=True)
-    detected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    is_resolved: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    employee = relationship("Employee", back_populates="conflicts")
-
-
-class RiskMetric(Base):
-    """Снимок риска сотрудника на конкретную дату. Для графика истории."""
-
-    __tablename__ = "risk_metrics"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"), nullable=False)
-    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    workload_pct: Mapped[float] = mapped_column(Float, default=0.0)
-    overtime_hours: Mapped[float] = mapped_column(Float, default=0.0)
-    conflict_count: Mapped[int] = mapped_column(Integer, default=0)
-    staleness_days: Mapped[int] = mapped_column(Integer, default=0)
-    risk_score: Mapped[float] = mapped_column(Float, default=0.0)
-
-
-class Notification(Base):
-    __tablename__ = "notifications"
-
-    id: Mapped[str] = mapped_column(String, primary_key=True)
-    employee_id: Mapped[str | None] = mapped_column(ForeignKey("employees.id"), nullable=True)
-    who: Mapped[str] = mapped_column(String, nullable=False)  # отображаемое имя
-    text: Mapped[str] = mapped_column(Text, nullable=False)
-    action: Mapped[str] = mapped_column(String, nullable=False)
-    urgent: Mapped[bool] = mapped_column(Boolean, default=False)
-    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    icon: Mapped[str] = mapped_column(String, default="calendar")
+    status: Mapped[str] = mapped_column(String, default="active")
+    last_sync: Mapped[str] = mapped_column(String, default="только что")
+    records: Mapped[int] = mapped_column(Integer, default=0)

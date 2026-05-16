@@ -1,105 +1,62 @@
-# WorkTime Sync — Backend
+# WorkTime Sync — Backend (для нового фронта)
 
-## Быстрый старт (SQLite, без Postgres)
+Бэкенд под полный фронт `worktime-frontend-full` (Tailwind v4, 9 сотрудников,
+все экраны ТЗ). Отдаёт ровно те же структуры, что фронт считал локально, —
+показатели рассчитываются формулами из ТЗ в `app/services/metrics.py`.
+
+## Запуск (SQLite, без Postgres)
 
 ```bash
-cd backend
+cd be
 python -m venv .venv
-source .venv/bin/activate          # на Windows: .venv\Scripts\activate
+.venv\Scripts\activate            # Windows; на mac/linux: source .venv/bin/activate
 pip install -r requirements.txt
 
-# Создать БД и наполнить демо-данными
-python seed.py
-
-# Запустить сервер
-uvicorn app.main:app --reload --port 8000
-
-# В отдельном терминале — прогнать детекторы и пересчитать риск
-curl -X POST http://localhost:8000/recalculate
+python seed.py                      # создаёт БД + 9 сотрудников
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
-После этого открой:
-- http://localhost:8000/docs — Swagger со всеми эндпоинтами
-- http://localhost:5173 — фронт (если запущен)
+Открой http://localhost:8000/docs — Swagger со всеми эндпоинтами.
 
-## Структура
+## Эндпоинты
 
-```
-backend/
-├── app/
-│   ├── api/                    # FastAPI роутеры
-│   │   ├── employees.py        # GET /employees, /employees/{id}, /employees/{id}/risk
-│   │   ├── conflicts.py        # GET /conflicts, POST /recalculate
-│   │   ├── availability.py     # GET /availability, POST /meetings/suggest-time
-│   │   └── misc.py             # GET /sources, /notifications, /stats
-│   ├── core/
-│   │   ├── config.py           # Pydantic-settings
-│   │   ├── database.py         # SQLAlchemy engine
-│   │   └── time_utils.py       # часовые пояса, конвертации (КРИТИЧЕСКОЕ!)
-│   ├── models/
-│   │   └── models.py           # SQLAlchemy модели
-│   ├── schemas/
-│   │   └── schemas.py          # Pydantic схемы для API
-│   ├── services/
-│   │   ├── conflict_detectors/ # 6 правил, каждое отдельной функцией
-│   │   ├── availability.py     # сетка доступности
-│   │   ├── meeting_finder.py   # подбор оптимального времени
-│   │   ├── notifications.py    # генерация уведомлений
-│   │   └── risk_calculator.py  # формула риск-скора
-│   └── main.py                 # FastAPI app
-├── seed.py                     # генератор демо-данных
-├── requirements.txt
-└── Dockerfile
-```
+| Метод | URL | Отдаёт |
+|-------|-----|--------|
+| GET | `/employees?team=` | список EmployeeComputed (с metrics) |
+| GET | `/employees/{id}` | один сотрудник + metrics |
+| GET | `/diagnostics` | 9 диагностических групп |
+| GET | `/conflicts?severity=&type=` | конфликты |
+| POST | `/recalculate` | сводка пересчёта (для кнопки) |
+| GET | `/recommendations` | рекомендации |
+| GET | `/notifications` | умные уведомления |
+| GET | `/roadmap` | дорожная карта актуализации |
+| GET | `/availability?team=&day=` | командная доступность Tteam |
+| POST | `/meetings/suggest-time` | подбор окон встреч |
+| GET | `/sources` | источники данных |
+| GET | `/stats?team=` | KPI дашборда |
 
-## Эндпоинты (всё, что нужно фронту)
-
-| Метод | URL | Что делает |
-|-------|-----|------------|
-| GET | `/employees` | Список сотрудников + фильтры по team/tz |
-| GET | `/employees/{id}` | Детальная карточка + история риска + конфликты |
-| GET | `/conflicts` | Все конфликты с фильтрами по severity/type |
-| POST | `/recalculate` | Прогнать детекторы, пересчитать риск и уведомления |
-| GET | `/availability?employee_ids=e1,e2,e3` | Сетка доступности |
-| POST | `/meetings/suggest-time` | Топ-N оптимальных слотов |
-| GET | `/sources` | Источники с статусом синхронизации |
-| GET | `/notifications` | Список «что нужно сделать» |
-| GET | `/stats` | Карточки сверху дашборда |
-
-## Детекторы конфликтов
-
-Каждый детектор — функция с одним интерфейсом:
-`detect_xxx(db, employee, period_start, period_end) -> list[ConflictResult]`
-
-Базовые (must-have):
-- `out_of_hours` — встречи вне рабочих часов
-- `double_booking` — пересечение событий
-- `hr_mismatch` — событие во время отпуска
-- `overload` — > 100% загрузка за день
-
-Свои правила (для бонуса):
-- `back_to_back` — 4+ часов встреч подряд = выгорание
-- `stale_schedule` — график не обновлялся 14+ дней
-
-Добавить своё правило просто:
-1. Создать файл в `app/services/conflict_detectors/my_rule.py`
-2. Импортировать и добавить в `DETECTORS` в `__init__.py`
-
-## Формула риска
+## Формулы (раздел 14 ТЗ) — в `app/services/metrics.py`
 
 ```
-score = 0.4 * workload_pct
-      + 0.3 * conflict_count
-      + 0.2 * out_of_hours_pct
-      + 0.1 * staleness_days
+Ai = 1 − di/D,  D = 90
+Ci = Mout / Mall
+Li = Hbusy / Hwork,  порог 0.8
+Ri = 0.25·(1−Ai) + 0.30·Ci + 0.25·Li + 0.10·Zi + 0.10·Hi
 ```
 
-Все компоненты нормализуются в шкалу 0-100. Веса обоснованы тем, что
-загрузка — самый объективный сигнал, а давность графика — самый слабый.
+Проверено: расчёт совпадает с фронтовым `src/lib/metrics.ts` до числа
+(напр. Иван Петров: Ai=48%, Ci=25%, Li=29%, Ri=38).
 
-## Переход на Postgres
+## Связь с фронтом
 
-1. Поднять Postgres (например через `docker run -p 5432:5432 -e POSTGRES_PASSWORD=worktime postgres`)
-2. В `.env` поменять `DATABASE_URL` на `postgresql+psycopg2://...`
-3. `python seed.py` — пересоздаст таблицы и наполнит данными
-```
+Фронт ходит на `/api/*`, Vite-proxy (в `vite.config.ts`) перенаправляет
+на `http://localhost:8000`. `App.tsx` грузит данные при старте и кладёт
+в кэш через `hydrate()` — все страницы работают на серверных данных.
+
+Если бэк не запущен — фронт автоматически падает на локальные демо-данные
+и показывает жёлтую плашку (демо не ломается).
+
+## Postgres (опционально)
+
+В `.env` поменяй `DATABASE_URL` на `postgresql+psycopg2://...`,
+снова `python seed.py`.

@@ -1,13 +1,18 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Tailwind v4: тема настраивается прямо в CSS через @theme.
+   Никаких tailwind.config.js и postcss.config.js не нужно. */
+@theme {
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
 
 * {
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 body {
@@ -16,17 +21,45 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-thumb {
   background: #d6d3d1;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in {
+  animation: fadeIn 0.28s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.slide-in {
+  animation: slideIn 0.25s ease-out;
+}
+
 .accent-bar {
-  background: linear-gradient(180deg, #84cc16, #65a30d);
+  background: linear-gradient(180deg, #84cc16, #4d7c0f);
 }
