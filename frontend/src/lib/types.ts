@@ -36,6 +36,23 @@ export interface CalendarEvent {
   source: string
 }
 
+export type UserRole =
+  | 'Администратор'
+  | 'Руководитель'
+  | 'HR-специалист'
+  | 'Проектный менеджер'
+  | 'Аналитик'
+  | 'Сотрудник'
+
+export interface HistoryEntry {
+  // история изменений рабочего времени (раздел 3, проблема №11 ТЗ)
+  id: string
+  date: string // ISO
+  action: string
+  detail: string
+  riskAt: number // снимок Ri на момент изменения (0..1)
+}
+
 export interface Employee {
   // ei
   id: string
@@ -60,6 +77,8 @@ export interface Employee {
   exceptions: TimeException[]
   // признак фактического часового пояса по активности (для Zi)
   activityTimezoneShift: boolean
+  // история изменений (раздел 3 ТЗ)
+  history?: HistoryEntry[]
 }
 
 // Рассчитанные показатели (раздел 14 ТЗ)

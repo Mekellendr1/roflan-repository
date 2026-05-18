@@ -1,4 +1,6 @@
+import { useRef, useState } from 'react'
 import { dataSources } from '../lib/mockData'
+import { useStore } from '../lib/store'
 import { Badge } from '../components/Primitives'
 import Icon from '../components/Icon'
 import TopBar, { GhostButton } from '../components/TopBar'
@@ -19,6 +21,30 @@ const STATUS: Record<string, { label: string; color: 'green' | 'amber' | 'red'; 
 
 export default function Sources() {
   const total = dataSources.reduce((s, d) => s + d.records, 0)
+  const { importEmployees, resetData } = useStore()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const onFile = async (file: File) => {
+    try {
+      const text = await file.text()
+      let parsed: unknown
+      if (file.name.endsWith('.json')) {
+        parsed = JSON.parse(text)
+      } else {
+        // примитивный CSV-парсер: ожидаем JSON-массив тоже допустим
+        setMsg({
+          ok: false,
+          text: 'CSV: для MVP загрузите JSON-массив сотрудников (формат как в mockData)',
+        })
+        return
+      }
+      const res = importEmployees(parsed as never)
+      setMsg({ ok: res.ok, text: res.message })
+    } catch {
+      setMsg({ ok: false, text: 'Не удалось прочитать файл' })
+    }
+  }
 
   return (
     <div className="fade-in">
@@ -26,11 +52,47 @@ export default function Sources() {
         title="Загрузка данных"
         subtitle="Источники, из которых система собирает данные о рабочем времени"
       >
-        <GhostButton icon="download" label="Импорт CSV/JSON" />
-        <GhostButton icon="refresh" label="Синхронизировать всё" />
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".json,.csv"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) onFile(f)
+            e.target.value = ''
+          }}
+        />
+        <button
+          onClick={() => fileRef.current?.click()}
+          className="px-3 py-2 text-sm rounded-lg bg-lime-500 text-stone-900 hover:bg-lime-400 font-semibold flex items-center gap-2"
+        >
+          <Icon name="download" className="w-4 h-4" />
+          Импорт JSON
+        </button>
+        <GhostButton
+          icon="refresh"
+          label="Сбросить к демо"
+          onClick={() => {
+            resetData()
+            setMsg({ ok: true, text: 'Данные сброшены к демонстрационным' })
+          }}
+        />
       </TopBar>
 
       <div className="p-8">
+        {msg && (
+          <div
+            className={`mb-5 px-4 py-3 rounded-xl text-sm border ${
+              msg.ok
+                ? 'bg-lime-50 border-lime-200 text-lime-800'
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}
+          >
+            {msg.ok ? '✓ ' : '✕ '}
+            {msg.text}
+          </div>
+        )}
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="bg-white border border-stone-200 rounded-xl p-5">
             <p className="text-xs text-stone-500 uppercase tracking-wide mb-2">

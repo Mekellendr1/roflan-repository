@@ -25,17 +25,22 @@ export default function Conflicts({ setRoute }: { setRoute: (r: string) => void 
   const all = useMemo(() => allConflicts(), [])
   const [sev, setSev] = useState<Conflict['severity'] | 'all'>('all')
   const [type, setType] = useState<string>('all')
+  const [resolved, setResolved] = useState<string[]>([])
 
   const filtered = all.filter(
-    (c) => (sev === 'all' || c.severity === sev) && (type === 'all' || c.type === type)
+    (c) =>
+      !resolved.includes(c.id) &&
+      (sev === 'all' || c.severity === sev) &&
+      (type === 'all' || c.type === type)
   )
   const types = [...new Set(all.map((c) => c.type))]
+  const activeCount = all.filter((c) => !resolved.includes(c.id)).length
 
   return (
     <div className="fade-in">
       <TopBar
         title="Поиск конфликтов"
-        subtitle={`Найдено ${all.length} · критических ${all.filter((c) => c.severity === 'critical').length}`}
+        subtitle={`Активных ${activeCount} · критических ${all.filter((c) => c.severity === 'critical' && !resolved.includes(c.id)).length}${resolved.length ? ` · решено ${resolved.length}` : ''}`}
       />
       <div className="p-8">
         <div className="flex items-center gap-2 mb-5 text-sm flex-wrap">
@@ -81,11 +86,24 @@ export default function Conflicts({ setRoute }: { setRoute: (r: string) => void 
                 <p className="font-semibold text-stone-900">{c.title}</p>
                 <p className="text-sm text-stone-500 mt-0.5">{c.desc}</p>
               </div>
-              <button className="px-3 py-1.5 text-sm font-medium text-white bg-stone-900 hover:bg-stone-800 rounded-lg">
+              <button
+                onClick={(ev) => {
+                  ev.stopPropagation()
+                  setResolved((r) => [...r, c.id])
+                }}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-stone-900 hover:bg-stone-800 rounded-lg"
+              >
                 Решить
               </button>
             </div>
           ))}
+          {filtered.length === 0 && (
+            <div className="text-center py-12 text-stone-500">
+              {resolved.length > 0
+                ? 'Все конфликты в этом фильтре решены 🎉'
+                : 'Конфликтов не найдено'}
+            </div>
+          )}
         </div>
       </div>
     </div>

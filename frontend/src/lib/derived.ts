@@ -50,6 +50,21 @@ export function hydrate(data: {
   cache.ready = true
 }
 
+/**
+ * Пересчитать ВСЕ производные данные из списка сотрудников store.
+ * Вызывается из App при каждом изменении (правка профиля, импорт и т.д.),
+ * чтобы все страницы видели свежие данные.
+ */
+export function hydrateFromList(list: EmployeeComputed[]) {
+  cache.employees = list
+  cache.groups = local.diagnosticGroups(list)
+  cache.conflicts = local.allConflicts(list)
+  cache.recommendations = local.allRecommendations(list)
+  cache.notifications = local.smartNotifications(list)
+  cache.roadmap = local.actualizationRoadmap(list)
+  cache.ready = true
+}
+
 function emps(): EmployeeComputed[] {
   return cache.ready ? cache.employees : local.COMPUTED
 }
