@@ -16,6 +16,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
+from app.api import ai as ai_routes
 from app.core.config import settings
 from app.core.database import Base, engine, get_db
 from app.models import Employee, Source
@@ -48,6 +49,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# AI-эндпоинты (/ai/chat, /ai/recommendations/{id}, /ai/suggest-slot, ...)
+app.include_router(ai_routes.router)
 
 
 @app.get("/", tags=["root"])
