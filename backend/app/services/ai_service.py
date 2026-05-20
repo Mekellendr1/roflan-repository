@@ -21,8 +21,13 @@ from app.models import Employee, Event, Exception_
 from app.services.derived import all_conflicts
 from app.services.metrics import compute_metrics
 
-OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 MAX_TOKENS = 1024
+
+
+def _chat_completions_url() -> str:
+    """Полный URL до /chat/completions из настроенного base_url."""
+    base = settings.openai_base_url.rstrip("/")
+    return f"{base}/chat/completions"
 
 WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
 
@@ -41,7 +46,11 @@ EXCEPTION_LABEL = {
 async def _call_openai(
     system: str, messages: list[dict], max_tokens: int = MAX_TOKENS
 ) -> str:
-    """Отправить запрос к OpenAI Chat Completions API и вернуть текст ответа."""
+    """Отправить запрос к OpenAI Chat Completions API и вернуть текст ответа.
+
+    На 4xx/5xx достаём из тела `error.message`/`error.code` и пробрасываем наверх
+    осмысленным RuntimeError — иначе пользователь видит только «429» без причины.
+    """
     api_key = settings.openai_api_key
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY не задан в .env")
@@ -58,10 +67,51 @@ async def _call_openai(
     }
 
     async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(OPENAI_API_URL, headers=headers, json=payload)
-        resp.raise_for_status()
-        data = resp.json()
+        resp = await client.post(_chat_completions_url(), headers=headers, json=payload)
 
+    if resp.status_code >= 400:
+        # Достаём «человеческое» сообщение OpenAI из тела ответа
+        try:
+            body = resp.json()
+            err = body.get("error", {}) if isinstance(body, dict) else {}
+            code = err.get("code") or err.get("type") or ""
+            msg = err.get("message") or resp.text[:300]
+        except Exception:
+            code = ""
+            msg = resp.text[:300]
+
+        status = resp.status_code
+
+        if status == 401:
+            raise RuntimeError(
+                "OPENAI_API_KEY невалиден или отозван. Открой platform.openai.com → "
+                "API keys, проверь что ключ существует, и обнови backend/.env."
+            )
+
+        if status == 429:
+            # Различаем «нет денег на счёте» от «слишком частые запросы»
+            low = (code + " " + msg).lower()
+            if "insufficient_quota" in low or "quota" in low or "billing" in low:
+                raise RuntimeError(
+                    "Закончилась квота OpenAI. Зайди на platform.openai.com → Billing "
+                    "и пополни счёт (минимум $5). Альтернатива: поставь "
+                    "OPENAI_MODEL=gpt-4o-mini в backend/.env — он в ~17 раз дешевле. "
+                    f"Полный ответ API: {msg}"
+                )
+            raise RuntimeError(
+                "Слишком частые запросы к OpenAI (rate limit). Подожди ~30 секунд "
+                f"и повтори. Можно перейти на OPENAI_MODEL=gpt-4o-mini — у него выше лимиты. {msg}"
+            )
+
+        if status == 404 and "model" in msg.lower():
+            raise RuntimeError(
+                f"OpenAI не знает модель «{settings.openai_model}». "
+                "Поставь OPENAI_MODEL=gpt-4o или gpt-4o-mini в .env."
+            )
+
+        raise RuntimeError(f"OpenAI {status} {code}: {msg}")
+
+    data = resp.json()
     return data["choices"][0]["message"]["content"].strip()
 
 

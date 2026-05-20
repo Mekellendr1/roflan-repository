@@ -15,9 +15,11 @@ class Settings(BaseSettings):
         "postgresql+psycopg2://worktime:worktime@localhost:5432/worktime"
     )
 
-    # AI (OpenAI Chat Completions). Если ключ не задан — AI-эндпоинты вернут 502.
+    # AI (Chat Completions, OpenAI-совместимый протокол).
+    # Любой провайдер с OpenAI-совместимым API. Пресеты см. в .env.example.
     openai_api_key: str = ""
-    openai_model: str = "gpt-4o"
+    openai_model: str = "gpt-4o-mini"
+    openai_base_url: str = "https://api.openai.com/v1"
 
     # CORS — фронт на vite-dev
     cors_origins: list[str] = [
@@ -27,8 +29,8 @@ class Settings(BaseSettings):
     ]
 
     # Константы формул из ТЗ
-    d_max_days: int = 90  # макс. период без обновления (Ai = 1 - di/D)
-    overload_threshold: float = 0.8  # порог перегрузки Li
+    d_max_days: int = 90
+    overload_threshold: float = 0.8
 
 
 settings = Settings()
