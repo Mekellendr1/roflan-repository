@@ -1,13 +1,14 @@
-"""AI-сервис: сборка контекста из БД и запросы к OpenAI Chat Completions.
+"""AI-сервис: сборка контекста из БД и запросы к Chat Completions API.
 
-Все обращения к LLM проходят через этот модуль. Промпты хранятся здесь же,
-чтобы их было удобно редактировать без правки бизнес-логики.
+Все обращения к LLM проходят через этот модуль. Промпты хранятся здесь же.
+Провайдер — любой с OpenAI-совместимым API (OpenAI / Groq / Gemini / Ollama),
+выбирается через settings.openai_base_url (.env -> OPENAI_BASE_URL).
 
-Ключ читается из settings (Settings → .env → OPENAI_API_KEY). Если ключа нет,
-функции бросают RuntimeError — слой api/ai.py перехватывает и отдаёт 502.
+Если ключ не задан или провайдер вернул ошибку — бросаем RuntimeError,
+слой api/ai.py перехватывает и отдаёт 502 с понятным текстом.
 
-Этот файл написан под ТЕКУЩУЮ схему: модели Employee/Event/Exception_
-(см. app/models/models.py) и compute_metrics из app/services/metrics.py.
+Файл написан под текущую схему БД: модели Employee/Event/Exception_
+и compute_metrics из app/services/metrics.py.
 """
 
 import json
@@ -23,12 +24,6 @@ from app.services.metrics import compute_metrics
 
 MAX_TOKENS = 1024
 
-
-def _chat_completions_url() -> str:
-    """Полный URL до /chat/completions из настроенного base_url."""
-    base = settings.openai_base_url.rstrip("/")
-    return f"{base}/chat/completions"
-
 WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
 
 EXCEPTION_LABEL = {
@@ -39,17 +34,23 @@ EXCEPTION_LABEL = {
 }
 
 
+def _chat_completions_url() -> str:
+    """Полный URL до /chat/completions из настроенного base_url."""
+    base = settings.openai_base_url.rstrip("/")
+    return f"{base}/chat/completions"
+
+
 # ---------------------------------------------------------------------------
-# Низкоуровневый вызов OpenAI
+# Низкоуровневый вызов LLM
 # ---------------------------------------------------------------------------
 
 async def _call_openai(
     system: str, messages: list[dict], max_tokens: int = MAX_TOKENS
 ) -> str:
-    """Отправить запрос к OpenAI Chat Completions API и вернуть текст ответа.
+    """Запрос к Chat Completions API, вернуть текст ответа.
 
-    На 4xx/5xx достаём из тела `error.message`/`error.code` и пробрасываем наверх
-    осмысленным RuntimeError — иначе пользователь видит только «429» без причины.
+    На 4xx/5xx достаём error.message/error.code из тела и пробрасываем наверх
+    осмысленным RuntimeError — иначе видно только голый код статуса.
     """
     api_key = settings.openai_api_key
     if not api_key:
@@ -67,10 +68,11 @@ async def _call_openai(
     }
 
     async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(_chat_completions_url(), headers=headers, json=payload)
+        resp = await client.post(
+            _chat_completions_url(), headers=headers, json=payload
+        )
 
     if resp.status_code >= 400:
-        # Достаём «человеческое» сообщение OpenAI из тела ответа
         try:
             body = resp.json()
             err = body.get("error", {}) if isinstance(body, dict) else {}
@@ -84,39 +86,35 @@ async def _call_openai(
 
         if status == 401:
             raise RuntimeError(
-                "OPENAI_API_KEY невалиден или отозван. Открой platform.openai.com → "
-                "API keys, проверь что ключ существует, и обнови backend/.env."
+                "API-ключ невалиден или отозван. Проверь OPENAI_API_KEY в backend/.env."
             )
 
         if status == 429:
-            # Различаем «нет денег на счёте» от «слишком частые запросы»
             low = (code + " " + msg).lower()
             if "insufficient_quota" in low or "quota" in low or "billing" in low:
                 raise RuntimeError(
-                    "Закончилась квота OpenAI. Зайди на platform.openai.com → Billing "
-                    "и пополни счёт (минимум $5). Альтернатива: поставь "
-                    "OPENAI_MODEL=gpt-4o-mini в backend/.env — он в ~17 раз дешевле. "
-                    f"Полный ответ API: {msg}"
+                    "Закончилась квота провайдера. Пополни счёт или переключись на "
+                    "бесплатный провайдер (Groq/Gemini) — пресеты в .env.example. "
+                    f"Ответ API: {msg}"
                 )
             raise RuntimeError(
-                "Слишком частые запросы к OpenAI (rate limit). Подожди ~30 секунд "
-                f"и повтори. Можно перейти на OPENAI_MODEL=gpt-4o-mini — у него выше лимиты. {msg}"
+                "Слишком частые запросы (rate limit). Подожди ~30 секунд и повтори. "
+                f"{msg}"
             )
 
         if status == 404 and "model" in msg.lower():
             raise RuntimeError(
-                f"OpenAI не знает модель «{settings.openai_model}». "
-                "Поставь OPENAI_MODEL=gpt-4o или gpt-4o-mini в .env."
+                f"Провайдер не знает модель «{settings.openai_model}». "
+                "Проверь OPENAI_MODEL в .env."
             )
 
-        raise RuntimeError(f"OpenAI {status} {code}: {msg}")
+        raise RuntimeError(f"AI {status} {code}: {msg}")
 
     data = resp.json()
     return data["choices"][0]["message"]["content"].strip()
 
 
-# Алиас — внутри сервиса используем нейтральное имя,
-# чтобы ai.py не зависел от конкретного провайдера
+# Алиас — внутри сервиса нейтральное имя, чтобы api/ai.py не зависел от провайдера
 _call_llm = _call_openai
 
 
@@ -130,8 +128,8 @@ def _schedule_days(emp: Employee) -> list[int]:
 
 def _schedule_str(emp: Employee) -> str:
     days = _schedule_days(emp)
-    day_names = "–".join(WEEKDAYS[d] for d in days) if days else "—"
-    return f"{day_names}, {emp.work_start}:00–{emp.work_end}:00 {emp.tz_short}"
+    day_names = "-".join(WEEKDAYS[d] for d in days) if days else "—"
+    return f"{day_names}, {emp.work_start}:00-{emp.work_end}:00 {emp.tz_short}"
 
 
 def _employee_events(db: Session, employee: Employee) -> list[Event]:
@@ -152,7 +150,7 @@ def _employee_exceptions(db: Session, employee: Employee) -> list[Exception_]:
 # ---------------------------------------------------------------------------
 
 def _build_employee_context(db: Session, employee: Employee) -> str:
-    """Сформировать текстовый контекст о сотруднике для промпта."""
+    """Текстовый контекст об одном сотруднике для промпта."""
     metrics = compute_metrics(employee)
     events = _employee_events(db, employee)
     exceptions = _employee_exceptions(db, employee)
@@ -180,7 +178,7 @@ def _build_employee_context(db: Session, employee: Employee) -> str:
         lines += ["", "События в демо-неделе:"]
         for ev in events[:15]:
             lines.append(
-                f"  - {WEEKDAYS[ev.day]} {ev.start_hour:>4.1f}–{ev.end_hour:.1f} · "
+                f"  - {WEEKDAYS[ev.day]} {ev.start_hour:>4.1f}-{ev.end_hour:.1f} "
                 f"{ev.title} [{ev.event_type}]"
             )
 
@@ -233,13 +231,13 @@ SYSTEM_PROMPT = """Ты — AI-ассистент системы WorkTime Sync. 
 Отвечай коротко и конкретно. Предлагай конкретные действия, а не общие советы.
 Всегда объясняй причину своих рекомендаций. Пиши по-русски.
 
-Метрики системы (по разделу ТЗ):
+Метрики системы:
 - Ai — актуальность графика (1 = свежий, 0 = очень устарел)
 - Ci — доля встреч вне рабочих часов
 - Li — загрузка (доля рабочих часов, занятых встречами)
 - Zi — смена часового пояса (0/1)
-- Hi — расхождение HR ↔ профиль (0/1)
-- Ri — интегральный риск 0..1 (критический ≥ 0.7, высокий ≥ 0.5)
+- Hi — расхождение HR / профиль (0/1)
+- Ri — интегральный риск 0..1 (критический >= 0.7, высокий >= 0.5)
 
 {team_context}"""
 
@@ -247,6 +245,18 @@ SYSTEM_PROMPT = """Ты — AI-ассистент системы WorkTime Sync. 
 # ---------------------------------------------------------------------------
 # Публичные функции сервиса
 # ---------------------------------------------------------------------------
+
+def _strip_json(raw: str) -> str:
+    """Убрать markdown-обёртку ```json ... ``` если LLM её добавила."""
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        parts = cleaned.split("```")
+        if len(parts) >= 2:
+            cleaned = parts[1]
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+    return cleaned.strip()
+
 
 async def chat(db: Session, user_message: str, history: list[dict]) -> str:
     """Ответить на вопрос пользователя в контексте всей команды."""
@@ -263,7 +273,7 @@ async def get_recommendations(db: Session, employee: Employee) -> dict:
     system = """Ты — AI-ассистент WorkTime Sync. Тебе дан контекст одного
 сотрудника. Сгенерируй структурированные рекомендации.
 
-Ответь ТОЛЬКО валидным JSON без markdown (без ```json).
+Ответь ТОЛЬКО валидным JSON без markdown.
 Структура:
 {
   "summary": "Краткий вывод о ситуации (1-2 предложения)",
@@ -283,9 +293,8 @@ async def get_recommendations(db: Session, employee: Employee) -> dict:
 
     raw = await _call_llm(system, [{"role": "user", "content": emp_ctx}])
     try:
-        cleaned = raw.strip().removeprefix("```json").removesuffix("```").strip()
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
+        return json.loads(_strip_json(raw))
+    except (json.JSONDecodeError, IndexError):
         return {
             "summary": raw[:300],
             "risk_explanation": "",
@@ -313,7 +322,7 @@ async def suggest_meeting_slot(
         exceptions = _employee_exceptions(db, emp)
 
         busy = [
-            f"{WEEKDAYS[e.day]} {e.start_hour:.1f}–{e.end_hour:.1f}"
+            f"{WEEKDAYS[e.day]} {e.start_hour:.1f}-{e.end_hour:.1f}"
             for e in events
             if e.event_type != "focus"
         ]
@@ -325,7 +334,7 @@ async def suggest_meeting_slot(
 
         parts.append(
             f"{emp.name} ({emp.tz_short} UTC{emp.tz_offset:+d}, "
-            f"рабочие дни {days}, часы {emp.work_start}:00–{emp.work_end}:00)\n"
+            f"рабочие дни {days}, часы {emp.work_start}:00-{emp.work_end}:00)\n"
             f"  Загрузка: {round(m['workload'] * 100)}%"
             + (f"\n  Исключения: {', '.join(exc_info)}" if exc_info else "")
             + (
@@ -351,7 +360,7 @@ async def suggest_meeting_slot(
 4. Уровень загрузки — не дави на перегруженных.
 5. Предпочитай середину рабочего дня.
 
-Дни недели в формате Пн/Вт/Ср/Чт/Пт.
+Дни недели: Пн/Вт/Ср/Чт/Пт.
 
 Ответь ТОЛЬКО валидным JSON без markdown:
 {
@@ -371,11 +380,12 @@ async def suggest_meeting_slot(
   }
 }"""
 
-    raw = await _call_llm(system, [{"role": "user", "content": context}], max_tokens=512)
+    raw = await _call_llm(
+        system, [{"role": "user", "content": context}], max_tokens=512
+    )
     try:
-        cleaned = raw.strip().removeprefix("```json").removesuffix("```").strip()
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
+        return json.loads(_strip_json(raw))
+    except (json.JSONDecodeError, IndexError):
         return {"raw": raw, "error": "Не удалось распарсить ответ"}
 
 
@@ -416,9 +426,11 @@ async def generate_smart_notifications(db: Session) -> list[dict]:
 
 Если уведомлять некого — верни пустой массив []."""
 
-    raw = await _call_llm(system, [{"role": "user", "content": context}], max_tokens=768)
+    raw = await _call_llm(
+        system, [{"role": "user", "content": context}], max_tokens=768
+    )
     try:
-        cleaned = raw.strip().removeprefix("```json").removesuffix("```").strip()
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
+        result = json.loads(_strip_json(raw))
+        return result if isinstance(result, list) else []
+    except (json.JSONDecodeError, IndexError):
         return []
