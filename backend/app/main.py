@@ -17,6 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.api import ai as ai_routes
+from app.api import auth as auth_routes
+from app.api import projects as project_routes
 from app.core.config import settings
 from app.core.database import Base, engine, get_db
 from app.models import Employee, Source
@@ -53,6 +55,9 @@ app.add_middleware(
 
 # AI-эндпоинты (/ai/chat, /ai/recommendations/{id}, /ai/suggest-slot, ...)
 app.include_router(ai_routes.router)
+# Auth + Projects
+app.include_router(auth_routes.router)
+app.include_router(project_routes.router)
 
 
 @app.get("/", tags=["root"])

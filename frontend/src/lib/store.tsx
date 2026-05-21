@@ -13,7 +13,6 @@ import type {
   EmployeeComputed,
   HistoryEntry,
   TimeException,
-  UserRole,
   WorkSchedule,
 } from './types'
 
@@ -27,8 +26,6 @@ function uid(prefix: string) {
 
 interface StoreValue {
   employees: EmployeeComputed[]
-  role: UserRole
-  setRole: (r: UserRole) => void
   getEmployee: (id: string) => EmployeeComputed | undefined
   // мутации профиля (раздел 3, 11 ТЗ)
   confirmActuality: (id: string) => void
@@ -69,8 +66,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ],
     }))
   )
-  const [role, setRole] = useState<UserRole>('HR-специалист')
-
   const employees = useMemo<EmployeeComputed[]>(
     () => raw.map(computeMetrics),
     [raw]
@@ -210,8 +205,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value: StoreValue = {
     employees,
-    role,
-    setRole,
     getEmployee,
     confirmActuality,
     updateSchedule,

@@ -28,6 +28,11 @@ class Settings(BaseSettings):
         "http://localhost:3000",
     ]
 
+    # JWT
+    jwt_secret_key: str = "CHANGE_ME"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60 * 24  # 24 часа
+
     # Константы формул из ТЗ
     d_max_days: int = 90
     overload_threshold: float = 0.8

@@ -5,10 +5,64 @@
 требование раздела 14 «показатели в работающем коде».
 """
 
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+# ===== AUTH / PROJECTS =====
+
+class User(Base):
+    """Системный пользователь (аккаунт)."""
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    username: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    full_name: Mapped[str] = mapped_column(String, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    owned_projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
+    memberships = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan")
+
+
+class Project(Base):
+    """Проект."""
+    __tablename__ = "projects"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="")
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    owner = relationship("User", back_populates="owned_projects")
+    members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
+
+
+class ProjectMember(Base):
+    """Участник проекта с ролью."""
+    __tablename__ = "project_members"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.id"), nullable=False)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    # owner | admin | editor | viewer
+    role: Mapped[str] = mapped_column(String, default="viewer")
+    invited_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    project = relationship("Project", back_populates="members")
+    user = relationship("User", back_populates="memberships")
 
 
 class Employee(Base):

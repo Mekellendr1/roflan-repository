@@ -17,7 +17,8 @@ const ALL = [
 
 // Доступ по ролям (раздел 12 ТЗ).
 // Администратор — всё. Остальные — по зоне ответственности.
-export const ROLE_ACCESS: Record<UserRole, string[]> = {
+export const ROLE_ACCESS: Record<UserRole | 'owner', string[]> = {
+  owner: ALL,
   Администратор: ALL,
   Руководитель: [
     'dashboard',
