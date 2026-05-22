@@ -104,7 +104,7 @@ export default function AIAssistant({ onClose }: { onClose: () => void }) {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: 'ai',
-      text: 'Привет! Я AI-ассистент WorkTime Sync. Анализирую данные команды и помогаю с планированием. Что хочешь узнать?',
+      text: 'Привет! Я ассистент WorkTime Sync. Могу помочь с доступностью, конфликтами и приоритетами.',
     },
   ])
   const [input, setInput] = useState('')
@@ -129,11 +129,11 @@ export default function AIAssistant({ onClose }: { onClose: () => void }) {
       <div className="relative w-[420px] bg-white h-full flex flex-col slide-in shadow-2xl">
         <div className="px-5 py-4 border-b border-stone-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-lime-100 flex items-center justify-center">
-              <Icon name="ai" className="w-4 h-4 text-lime-700" />
+            <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center">
+              <Icon name="ai" className="w-4 h-4 text-sky-700" />
             </div>
             <div>
-              <p className="font-bold text-stone-900 text-sm">AI-ассистент</p>
+              <p className="font-bold text-stone-900 text-sm">Ассистент</p>
               <p className="text-xs text-stone-500">анализирует данные команды</p>
             </div>
           </div>
@@ -167,7 +167,7 @@ export default function AIAssistant({ onClose }: { onClose: () => void }) {
             <button
               key={s}
               onClick={() => ask(s)}
-              className="text-xs px-2.5 py-1 bg-white border border-stone-200 rounded-full hover:border-lime-400 hover:bg-lime-50 text-stone-600"
+              className="text-xs px-2.5 py-1 bg-white border border-stone-200 rounded-full hover:border-sky-400 hover:bg-sky-50 text-stone-600"
             >
               {s}
             </button>
@@ -175,16 +175,16 @@ export default function AIAssistant({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="p-4 border-t border-stone-200 flex gap-2">
-          <input
+            <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && ask(input)}
             placeholder="Спроси про доступность, риски, перегрузку…"
-            className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-lime-400"
+              className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-sky-400"
           />
           <button
             onClick={() => ask(input)}
-            className="px-3 py-2 bg-lime-500 text-stone-900 rounded-lg hover:bg-lime-400"
+              className="px-3 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-400"
           >
             <Icon name="send" className="w-4 h-4" />
           </button>

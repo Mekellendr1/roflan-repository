@@ -134,8 +134,8 @@ export default function MeetingFinder() {
             </div>
             <button
               onClick={() => setResults(findSlots(selected, duration))}
-              disabled={selected.length < 2}
-              className="px-5 py-2.5 bg-lime-500 text-stone-900 rounded-lg font-semibold hover:bg-lime-400 flex items-center gap-2 disabled:opacity-50"
+                disabled={selected.length < 2}
+                className="px-5 py-2.5 bg-sky-500 text-white rounded-lg font-semibold hover:bg-sky-400 flex items-center gap-2 disabled:opacity-50"
             >
               <Icon name="search" className="w-4 h-4" />
               Найти оптимальное время
@@ -155,18 +155,18 @@ export default function MeetingFinder() {
                 <div
                   key={i}
                   className={`bg-white border rounded-xl p-5 ${
-                    s.optimal ? 'border-lime-400 border-2' : 'border-stone-200'
+                    s.optimal ? 'border-sky-400 border-2' : 'border-stone-200'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-stone-900">
-                          {s.day} · <span className="font-mono">{s.time}</span>
+                          {s.day} · <span>{s.time}</span>
                         </p>
-                        {s.optimal && <Badge color="lime">★ оптимально</Badge>}
+                        {s.optimal && <Badge color="stone">★ оптимально</Badge>}
                       </div>
-                      <p className="text-sm text-stone-500 font-mono mt-0.5">{s.tzs}</p>
+                      <p className="text-sm text-stone-500 mt-0.5">{s.tzs}</p>
                     </div>
                     <div className="text-right">
                       <p

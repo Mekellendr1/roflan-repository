@@ -65,7 +65,7 @@ export default function Sources() {
         />
         <button
           onClick={() => fileRef.current?.click()}
-          className="px-3 py-2 text-sm rounded-lg bg-lime-500 text-stone-900 hover:bg-lime-400 font-semibold flex items-center gap-2"
+          className="px-3 py-2 text-sm rounded-lg bg-sky-500 text-white hover:bg-sky-400 font-semibold flex items-center gap-2"
         >
           <Icon name="download" className="w-4 h-4" />
           Импорт JSON
@@ -85,7 +85,7 @@ export default function Sources() {
           <div
             className={`mb-5 px-4 py-3 rounded-xl text-sm border ${
               msg.ok
-                ? 'bg-lime-50 border-lime-200 text-lime-800'
+                ? 'bg-sky-50 border-sky-200 text-sky-800'
                 : 'bg-red-50 border-red-200 text-red-800'
             }`}
           >

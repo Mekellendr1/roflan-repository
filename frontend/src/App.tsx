@@ -24,9 +24,13 @@ import type { ProjectRole } from './lib/authTypes'
 
 function AppShell() {
   const [route, setRoute] = useState('projects')
+  const [history, setHistory] = useState<string[]>(['projects'])
   const [aiOpen, setAiOpen] = useState(false)
   const [activeProjectName, setActiveProjectName] = useState<string | null>(null)
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [activeProjectRole, setActiveProjectRole] = useState<ProjectRole | null>(null)
+  const [renameMode, setRenameMode] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
   const [projects, setProjects] = useState<any[]>([])
   const { employees } = useStore()
   const { user, loading: authLoading, logout } = useAuth()
@@ -34,8 +38,6 @@ function AppShell() {
   useEffect(() => {
     hydrateFromList(employees)
   }, [employees])
-
-  // active project persists until explicitly changed or closed
 
   // Load projects for the current user and restore last opened
   useEffect(() => {
@@ -50,7 +52,7 @@ function AppShell() {
           setProjects(list)
           const last = localStorage.getItem('wt_last_project')
           if (last && list.find((p: any) => p.id === last)) {
-            setRoute(`project/${last}`)
+            updateRoute(`project/${last}`)
           }
         })
         .catch(() => {
@@ -62,9 +64,52 @@ function AppShell() {
     }
   }, [user])
 
+  // Syncs route with browser history
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.slice(1) || 'projects'
+      setRoute(path)
+      setHistory((h) => h.slice(0, -1))
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  // Navigate back
+  const goBack = () => {
+    if (history.length > 1) {
+      const newHistory = history.slice(0, -1)
+      setHistory(newHistory)
+      setRoute(newHistory[newHistory.length - 1])
+      window.history.back()
+    }
+  }
+
+  // Updates browser URL when route changes
+  const updateRoute = (newRoute: string) => {
+    setRoute(newRoute)
+    setHistory((h) => [...h, newRoute])
+    window.history.pushState(null, '', `/${newRoute}`)
+  }
+
+  const handleRenameProject = async (projectId: string, newName: string) => {
+    if (newName.trim() && projectId === activeProjectId) {
+      // Here you would call your API to update the project name
+      // apiUpdateProjectName(projectId, newName)
+      setActiveProjectName(newName)
+      setProjects((p) =>
+        p.map((proj) =>
+          proj.id === projectId ? { ...proj, name: newName } : proj
+        )
+      )
+      setRenameMode(false)
+      setNewProjectName('')
+    }
+  }
+
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center text-stone-400 text-sm">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-400 text-sm">
         Загрузка...
       </div>
     )
@@ -76,16 +121,18 @@ function AppShell() {
 
   function render() {
     if (route.startsWith('emp/')) {
-      return <EmployeeDetail empId={route.slice(4)} setRoute={setRoute} />
+      return <EmployeeDetail empId={route.slice(4)} onBack={goBack} setRoute={updateRoute} />
     }
     if (route.startsWith('project/')) {
       const projectId = route.slice('project/'.length)
       return (
         <ProjectDetail
           projectId={projectId}
-          setRoute={setRoute}
+          onBack={goBack}
+          setRoute={updateRoute}
           onProjectLoaded={(name, role) => {
             setActiveProjectName(name)
+            setActiveProjectId(projectId)
             setActiveProjectRole(role)
           }}
         />
@@ -93,58 +140,61 @@ function AppShell() {
     }
     switch (route) {
       case 'dashboard':
-        return <Dashboard setRoute={setRoute} />
+        return <Dashboard setRoute={updateRoute} />
       case 'analytics':
         return <Analytics />
       case 'employees':
-        return <Employees setRoute={setRoute} />
+        return <Employees setRoute={updateRoute} />
       case 'diagnostics':
-        return <Diagnostics setRoute={setRoute} />
+        return <Diagnostics setRoute={updateRoute} />
       case 'map':
         return <AvailabilityMap />
       case 'meeting':
         return <MeetingFinder />
       case 'conflicts':
-        return <Conflicts setRoute={setRoute} />
+        return <Conflicts setRoute={updateRoute} />
       case 'recommendations':
-        return <Recommendations setRoute={setRoute} />
+        return <Recommendations setRoute={updateRoute} />
       case 'roadmap':
-        return <Roadmap setRoute={setRoute} />
+        return <Roadmap setRoute={updateRoute} />
       case 'notifications':
-        return <Notifications setRoute={setRoute} />
+        return <Notifications setRoute={updateRoute} />
       case 'sources':
         return <Sources />
       case 'projects':
-        return <ProjectsPage setRoute={setRoute} />
+        return <ProjectsPage setRoute={updateRoute} />
       default:
-        return <Dashboard setRoute={setRoute} />
+        return <Dashboard setRoute={updateRoute} />
     }
   }
 
   return (
-    <div className="flex min-h-screen bg-stone-50">
+    <div className="flex min-h-screen bg-gray-50">
       {activeProjectName ? (
         <Sidebar
           route={route}
-          setRoute={setRoute}
+          setRoute={updateRoute}
           onOpenAI={() => setAiOpen(true)}
           onLogout={logout}
           currentProjectName={activeProjectName}
+          currentProjectId={activeProjectId}
           currentRole={activeProjectRole}
           projects={projects}
           onSelectProject={(id: string) => {
             localStorage.setItem('wt_last_project', id)
-            setRoute(`project/${id}`)
+            updateRoute(`project/${id}`)
           }}
+          onRenameProject={handleRenameProject}
         />
       ) : (
         <div className="w-20 flex flex-col items-center py-6 border-r border-stone-100">
           <button
-            onClick={() => setRoute('projects')}
-            className="flex flex-col items-center gap-1 text-stone-600 hover:text-stone-900"
+            onClick={() => updateRoute('projects')}
+            className="flex flex-col items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+            title="Проекты"
           >
             <Icon name="project" className="w-6 h-6" />
-            <span className="text-xs">Проекты</span>
+            <span className="text-xs font-medium">Проекты</span>
           </button>
         </div>
       )}

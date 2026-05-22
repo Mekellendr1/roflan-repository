@@ -34,7 +34,7 @@ export default function AvailabilityMap() {
 
   const cellClass = (s: string, isAllFree: boolean) => {
     if (isAllFree && s === 'free')
-      return 'bg-lime-400 ring-2 ring-lime-700 ring-inset'
+      return 'bg-sky-400 ring-2 ring-sky-700 ring-inset'
     if (s === 'off') return 'bg-stone-200'
     if (s === 'free') return 'bg-emerald-100 hover:bg-emerald-200'
     return 'bg-red-400 hover:bg-red-500'
@@ -79,9 +79,9 @@ export default function AvailabilityMap() {
                   </th>
                   {HOURS.map((h) => (
                     <th
-                      key={h}
-                      className="text-center text-xs font-mono text-stone-500 pb-3 px-0.5"
-                    >
+                        key={h}
+                        className="text-center text-xs text-stone-500 pb-3 px-0.5"
+                      >
                       {h}
                     </th>
                   ))}
@@ -94,7 +94,7 @@ export default function AvailabilityMap() {
                       <p className="text-sm font-medium text-stone-900 truncate">
                         {e.name}
                       </p>
-                      <p className="text-[10px] text-stone-500 font-mono">
+                      <p className="text-[10px] text-stone-500">
                         {e.tzShort} · {e.schedule.startHour}–{e.schedule.endHour}
                       </p>
                     </td>
@@ -120,7 +120,7 @@ export default function AvailabilityMap() {
             <Lg c="bg-emerald-100" t="свободен" />
             <Lg c="bg-red-400" t="занят" />
             <Lg c="bg-stone-200" t="вне рабочих часов" />
-            <Lg c="bg-lime-400 ring-2 ring-lime-700 ring-inset" t="вся команда свободна" />
+            <Lg c="bg-sky-400 ring-2 ring-sky-700 ring-inset" t="вся команда свободна" />
           </div>
         </div>
 
@@ -135,7 +135,7 @@ export default function AvailabilityMap() {
                 <div
                   className={`w-full rounded-t ${
                     s.freeCount === s.total && s.total > 0
-                      ? 'bg-lime-500'
+                      ? 'bg-sky-500'
                       : s.freeCount >= s.total / 2
                         ? 'bg-emerald-400'
                         : 'bg-amber-300'
@@ -149,15 +149,15 @@ export default function AvailabilityMap() {
           </div>
         </div>
 
-        <div className="bg-lime-50 border border-lime-200 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-lime-200 flex items-center justify-center flex-shrink-0">
-            <Icon name="bulb" className="w-5 h-5 text-lime-800" />
+        <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-sky-200 flex items-center justify-center flex-shrink-0">
+            <Icon name="bulb" className="w-5 h-5 text-sky-800" />
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-lime-900 text-sm">Рекомендация системы</p>
-            <p className="text-sm text-lime-800 mt-0.5">
+            <p className="font-semibold text-sky-900 text-sm">Рекомендация</p>
+            <p className="text-sm text-sky-800 mt-0.5">
               {WEEKDAYS[day]}, лучшее окно:{' '}
-              <span className="font-mono font-bold">
+              <span className="font-bold">
                 {best.hour}:00–{best.hour + 1}:00
               </span>{' '}
               — свободно {best.freeCount} из {best.total} участников.

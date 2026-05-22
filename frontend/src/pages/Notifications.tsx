@@ -24,7 +24,7 @@ export default function Notifications({
     <div className="fade-in">
       <TopBar
         title="Уведомления"
-        subtitle={`ИИ выбирает адресата, момент и причину · срочных ${all.filter((n) => n.urgent).length}`}
+        subtitle={`Система формирует адресные уведомления · срочных ${all.filter((n) => n.urgent).length}`}
       >
         <div className="flex gap-1 text-sm">
           {(['all', 'urgent'] as const).map((f) => (
@@ -86,19 +86,14 @@ export default function Notifications({
           )}
         </div>
 
-        <div className="mt-6 bg-lime-50 border border-lime-200 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-lime-200 flex items-center justify-center flex-shrink-0">
-            <Icon name="ai" className="w-5 h-5 text-lime-800" />
+        <div className="mt-6 bg-sky-50 border border-sky-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-sky-200 flex items-center justify-center flex-shrink-0">
+            <Icon name="ai" className="w-5 h-5 text-sky-800" />
           </div>
           <div>
-            <p className="font-semibold text-lime-900 text-sm">
-              Как работают умные уведомления
-            </p>
-            <p className="text-sm text-lime-800 mt-0.5">
-              Система не рассылает всем одинаковые напоминания. Для каждого
-              сотрудника ИИ оценивает риск, выбирает причину (устаревший график,
-              перегрузка, HR-расхождение) и формирует адресное действие только
-              при необходимости.
+            <p className="font-semibold text-sky-900 text-sm">Как работают уведомления</p>
+            <p className="text-sm text-sky-800 mt-0.5">
+              Система оценивает данные, выбирает релевантную причину (устаревший график, перегрузка, HR-расхождение) и формирует адресное действие только при необходимости.
             </p>
           </div>
         </div>

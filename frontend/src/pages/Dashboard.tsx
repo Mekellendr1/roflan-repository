@@ -5,7 +5,6 @@ import {
   diagnosticGroups,
 } from '../lib/derived'
 import { TEAMS } from '../lib/mockData'
-import { FORMULAS } from '../lib/metrics'
 import { avatarColor, riskColor } from '../lib/utils'
 import { Avatar, Badge } from '../components/Primitives'
 import Icon from '../components/Icon'
@@ -24,43 +23,64 @@ export default function Dashboard({ setRoute }: { setRoute: (r: string) => void 
   return (
     <div className="fade-in">
       <TopBar
-        title="Дашборд команды"
-        subtitle={`${s.total} сотрудников · 5 часовых поясов · обновлено только что`}
+        title="Обзор"
+        subtitle={`${s.total} сотрудников • 5 часовых поясов • обновлено только что`}
       >
         <select
           value={team}
           onChange={(e) => setTeam(e.target.value)}
-          className="px-3 py-2 text-sm border border-stone-200 rounded-lg bg-white"
+          className="px-4 py-2 text-sm border border-stone-300 rounded-lg bg-white font-medium text-gray-900 hover:border-stone-400 focus:border-blue-500 transition-colors"
         >
           {TEAMS.map((t) => (
             <option key={t}>{t}</option>
           ))}
         </select>
-        <GhostButton icon="refresh" label="Пересчитать" />
+        <GhostButton icon="refresh" label="Обновить" />
       </TopBar>
 
-      <div className="p-8">
-        {/* KPI */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <Kpi label="Средняя актуальность" value={`${s.avgActuality}%`} sub="показатель Ai по команде" tone={s.avgActuality < 60 ? 'red' : 'stone'} />
-          <Kpi label="В зоне риска" value={s.critical} sub="высокий + критический Ri" tone="red" />
-          <Kpi label="Активных конфликтов" value={s.conflicts} sub="календарь ↔ график" tone="amber" />
-          <Kpi label="Перегружены" value={s.overloaded} sub="загрузка Li > 80%" tone={s.overloaded ? 'amber' : 'stone'} />
+      <div className="p-8 bg-gray-50 min-h-[calc(100vh-100px)]">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <Kpi 
+            label="Актуальность" 
+            value={`${s.avgActuality}%`} 
+            sub="среднее по команде" 
+            tone={s.avgActuality < 60 ? 'danger' : 'neutral'} 
+          />
+          <Kpi 
+            label="В зоне риска" 
+            value={s.critical} 
+            sub="высокий и критический" 
+            tone="danger" 
+          />
+          <Kpi 
+            label="Конфликтов" 
+            value={s.conflicts} 
+            sub="пересечения в расписании" 
+            tone="warning" 
+          />
+          <Kpi 
+            label="Перегруженных" 
+            value={s.overloaded} 
+            sub="загрузка больше 80%" 
+            tone={s.overloaded ? 'warning' : 'neutral'} 
+          />
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
-          {/* Диагностические группы кратко */}
-          <div className="col-span-2">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-stone-900">Диагностика по группам</h2>
+        {/* Sections */}
+        <div className="space-y-8">
+          {/* Диагностика */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Диагностика по группам</h2>
               <button
                 onClick={() => setRoute('diagnostics')}
-                className="text-sm text-lime-700 font-medium hover:underline"
+                className="text-sm text-blue-700 font-medium hover:text-blue-800 transition"
               >
-                Все группы →
+                Подробнее →
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {groups
                 .filter((g) => g.employees.length > 0)
                 .slice(0, 6)
@@ -68,109 +88,84 @@ export default function Dashboard({ setRoute }: { setRoute: (r: string) => void 
                   <button
                     key={g.id}
                     onClick={() => setRoute('diagnostics')}
-                    className={`text-left border-l-4 rounded-xl p-4 bg-white border border-stone-200 hover:shadow-sm transition ${
-                      g.color === 'red'
-                        ? 'border-l-red-500'
-                        : g.color === 'amber'
-                          ? 'border-l-amber-500'
-                          : g.color === 'green'
-                            ? 'border-l-emerald-500'
-                            : g.color === 'blue'
-                              ? 'border-l-blue-500'
-                              : 'border-l-stone-400'
-                    }`}
+                    className="bg-white border border-stone-200 rounded-lg p-5 text-left hover:shadow-md card-hover transition"
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-semibold text-stone-900 text-sm">{g.title}</p>
-                      <span className="text-2xl font-bold font-mono text-stone-900">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">{g.title}</p>
+                        <p className="text-xs text-gray-600 mt-1">{g.desc}</p>
+                      </div>
+                      <span className={`text-2xl font-bold font-mono ${
+                        g.color === 'red' ? 'text-red-600' :
+                        g.color === 'amber' ? 'text-amber-600' :
+                        g.color === 'green' ? 'text-emerald-600' :
+                        'text-gray-600'
+                      }`}>
                         {g.employees.length}
                       </span>
                     </div>
-                    <p className="text-xs text-stone-500">{g.desc}</p>
+                    <div className={`h-1 rounded-full ${
+                      g.color === 'red' ? 'bg-red-100' :
+                      g.color === 'amber' ? 'bg-amber-100' :
+                      g.color === 'green' ? 'bg-emerald-100' :
+                      'bg-gray-100'
+                    }`} />
                   </button>
                 ))}
             </div>
-          </div>
+          </section>
 
-          {/* Формулы — доказательство что показатели в коде */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Icon name="formula" className="w-4 h-4 text-stone-500" />
-              <h2 className="text-lg font-bold text-stone-900">Показатели</h2>
+          {/* Топ риска */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Требуют внимания</h2>
+              <button
+                onClick={() => setRoute('roadmap')}
+                className="text-sm text-blue-700 font-medium hover:text-blue-800 transition"
+              >
+                План действий →
+              </button>
             </div>
-            <div className="bg-stone-900 rounded-xl p-4 text-stone-300 space-y-3">
-              {Object.entries(FORMULAS).map(([k, v]) => (
-                <div key={k}>
-                  <p className="text-[10px] uppercase tracking-wider text-stone-500 mb-0.5">
-                    {k === 'actuality'
-                      ? 'Актуальность'
-                      : k === 'conflicts'
-                        ? 'Конфликты'
-                        : k === 'workload'
-                          ? 'Загрузка'
-                          : k === 'team'
-                            ? 'Окно команды'
-                            : 'Интегральный риск'}
-                  </p>
-                  <code className="font-mono text-xs text-lime-400">{v}</code>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {topRisk.map((e) => {
+                const rc = riskColor[e.metrics.riskLevel]
+                return (
+                  <button
+                    key={e.id}
+                    onClick={() => setRoute('emp/' + e.id)}
+                    className="bg-white border border-stone-200 rounded-lg p-5 text-left hover:shadow-md card-hover transition"
+                  >
+                    <div className="flex items-start gap-4">
+                      <Avatar
+                        initials={e.initials}
+                        color={avatarColor(e.metrics.riskLevel)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900">{e.name}</p>
+                        <p className="text-xs text-gray-600 mt-0.5">
+                          {e.role} • {e.tzShort}
+                        </p>
+                        <div className="flex gap-2 mt-3 flex-wrap">
+                          <Badge color={e.metrics.riskLevel === 'critical' || e.metrics.riskLevel === 'high' ? 'red' : e.metrics.riskLevel === 'medium' ? 'amber' : 'green'}>
+                            {rc.label}
+                          </Badge>
+                          <Badge color="stone">
+                            актуальность {Math.round(e.metrics.actuality * 100)}%
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className={`text-2xl font-bold ${rc.text}`}>
+                          {Math.round(e.metrics.integralRisk * 100)}
+                        </p>
+                        <p className="text-[10px] text-gray-500 uppercase font-semibold">риск</p>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
-            <p className="text-xs text-stone-400 mt-2">
-              Все показатели рассчитываются в коде по данным, не захардкожены.
-            </p>
-          </div>
-        </div>
-
-        {/* Топ риска */}
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-stone-900">Наибольший риск неактуальности</h2>
-            <button
-              onClick={() => setRoute('roadmap')}
-              className="text-sm text-lime-700 font-medium hover:underline"
-            >
-              Дорожная карта →
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {topRisk.map((e) => {
-              const rc = riskColor[e.metrics.riskLevel]
-              return (
-                <button
-                  key={e.id}
-                  onClick={() => setRoute('emp/' + e.id)}
-                  className={`bg-white border border-stone-200 hover:shadow-sm transition rounded-xl p-4 text-left border-l-4 ${rc.border}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar
-                      initials={e.initials}
-                      color={avatarColor(e.metrics.riskLevel)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-stone-900 truncate">{e.name}</p>
-                      <p className="text-xs text-stone-500">
-                        {e.role} · {e.tzShort}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-xl font-bold font-mono ${rc.text}`}>
-                        {Math.round(e.metrics.integralRisk * 100)}
-                      </p>
-                      <p className="text-[10px] text-stone-400 uppercase">риск Ri</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1.5 mt-3 flex-wrap">
-                    <Badge color={e.metrics.riskLevel === 'critical' || e.metrics.riskLevel === 'high' ? 'red' : e.metrics.riskLevel === 'medium' ? 'amber' : 'green'}>
-                      {rc.label} риск
-                    </Badge>
-                    <Badge color="stone">актуальность {Math.round(e.metrics.actuality * 100)}%</Badge>
-                    {e.metrics.workload > 0.8 && <Badge color="red">перегрузка</Badge>}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
+          </section>
         </div>
       </div>
     </div>
@@ -181,21 +176,30 @@ function Kpi({
   label,
   value,
   sub,
-  tone = 'stone',
+  tone = 'neutral',
 }: {
   label: string
   value: string | number
   sub: string
-  tone?: 'red' | 'amber' | 'stone'
+  tone?: 'danger' | 'warning' | 'neutral'
 }) {
-  const c = tone === 'red' ? 'text-red-600' : tone === 'amber' ? 'text-amber-700' : 'text-stone-900'
+  const valueColor = 
+    tone === 'danger' ? 'text-red-600' : 
+    tone === 'warning' ? 'text-amber-600' : 
+    'text-gray-900'
+  
+  const bgColor =
+    tone === 'danger' ? 'bg-red-50 border-red-100' :
+    tone === 'warning' ? 'bg-amber-50 border-amber-100' :
+    'bg-white border-stone-200'
+
   return (
-    <div className="bg-white border border-stone-200 rounded-xl p-5">
-      <p className="text-xs text-stone-500 font-medium uppercase tracking-wide mb-2">
+    <div className={`${bgColor} border rounded-lg p-6 card-subtle`}>
+      <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-2">
         {label}
       </p>
-      <p className={`text-3xl font-bold ${c} mb-1`}>{value}</p>
-      <p className="text-xs text-stone-500">{sub}</p>
+      <p className={`text-4xl font-bold ${valueColor} mb-2`}>{value}</p>
+      <p className="text-sm text-gray-600">{sub}</p>
     </div>
   )
 }

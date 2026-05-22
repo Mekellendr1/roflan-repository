@@ -91,7 +91,7 @@ export default function EmployeeDetail({
       <TopBar title={e.name} subtitle={`${e.role} · ${e.team}`}>
         <button
           onClick={() => confirmActuality(e.id)}
-          className="px-3 py-2 text-sm rounded-lg bg-lime-500 text-stone-900 hover:bg-lime-400 font-semibold flex items-center gap-2"
+          className="px-3 py-2 text-sm rounded-lg bg-sky-500 text-white hover:bg-sky-400 font-semibold flex items-center gap-2"
         >
           <Icon name="check" className="w-4 h-4" />
           Подтвердить актуальность
@@ -205,7 +205,7 @@ export default function EmployeeDetail({
                 Из чего складывается риск
               </h2>
             </div>
-            <code className="block font-mono text-xs bg-stone-900 text-lime-400 rounded-lg p-3 mb-4">
+            <code className="block font-mono text-xs bg-stone-900 text-sky-400 rounded-lg p-3 mb-4">
               Ri = 0.25·(1−Ai) + 0.30·Ci + 0.25·Li + 0.10·Zi + 0.10·Hi
             </code>
             <div className="space-y-2.5">
@@ -215,7 +215,7 @@ export default function EmployeeDetail({
                   <div key={p.label}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-stone-600">{p.label}</span>
-                      <span className="font-mono text-stone-900">
+                      <span className="text-stone-900">
                         {p.w} × {p.v.toFixed(2)} = {contribution.toFixed(3)}
                       </span>
                     </div>
@@ -233,9 +233,8 @@ export default function EmployeeDetail({
             </div>
             <div className="mt-4 pt-3 border-t border-stone-100 flex justify-between">
               <span className="font-semibold text-stone-900">Итого Ri</span>
-              <span className={`font-mono font-bold ${rc.text}`}>
-                {m.integralRisk.toFixed(3)} ({Math.round(m.integralRisk * 100)}
-                /100)
+              <span className={`font-bold ${rc.text}`}>
+                {m.integralRisk.toFixed(3)} ({Math.round(m.integralRisk * 100)}/100)
               </span>
             </div>
           </div>
@@ -247,7 +246,7 @@ export default function EmployeeDetail({
                 <h2 className="font-bold text-stone-900">Заявленный график</h2>
                 <button
                   onClick={() => setEditSched((v) => !v)}
-                  className="text-sm text-lime-700 font-medium hover:underline"
+                  className="text-sm text-sky-700 font-medium hover:underline"
                 >
                   {editSched ? 'Отмена' : 'Изменить'}
                 </button>
@@ -261,7 +260,7 @@ export default function EmployeeDetail({
                         key={d}
                         className={`flex-1 text-center py-2 rounded-lg text-xs font-medium ${
                           e.schedule.days.includes(i)
-                            ? 'bg-lime-100 text-lime-800'
+                            ? 'bg-sky-100 text-sky-800'
                             : 'bg-stone-100 text-stone-400'
                         }`}
                       >
@@ -271,7 +270,7 @@ export default function EmployeeDetail({
                   </div>
                   <p className="text-sm text-stone-600">
                     Рабочие часы:{' '}
-                    <span className="font-mono font-semibold text-stone-900">
+                    <span className="font-semibold text-stone-900">
                       {e.schedule.startHour}:00–{e.schedule.endHour}:00
                     </span>{' '}
                     ({e.tzShort})
@@ -289,7 +288,7 @@ export default function EmployeeDetail({
                         onClick={() => toggleDay(i)}
                         className={`flex-1 py-2 rounded-lg text-xs font-medium ${
                           days.includes(i)
-                            ? 'bg-lime-500 text-stone-900'
+                            ? 'bg-sky-500 text-white'
                             : 'bg-stone-100 text-stone-400'
                         }`}
                       >
@@ -305,7 +304,7 @@ export default function EmployeeDetail({
                       max={23}
                       value={start}
                       onChange={(ev) => setStart(Number(ev.target.value))}
-                      className="w-16 border border-stone-200 rounded px-2 py-1 font-mono"
+                      className="w-16 border border-stone-200 rounded px-2 py-1"
                     />
                     <label className="text-stone-600">До</label>
                     <input
@@ -314,7 +313,7 @@ export default function EmployeeDetail({
                       max={24}
                       value={end}
                       onChange={(ev) => setEnd(Number(ev.target.value))}
-                      className="w-16 border border-stone-200 rounded px-2 py-1 font-mono"
+                      className="w-16 border border-stone-200 rounded px-2 py-1"
                     />
                   </div>
                   <button
@@ -334,7 +333,7 @@ export default function EmployeeDetail({
                 </h2>
                 <button
                   onClick={() => setShowExc((v) => !v)}
-                  className="text-sm text-lime-700 font-medium hover:underline"
+                  className="text-sm text-sky-700 font-medium hover:underline"
                 >
                   {showExc ? 'Отмена' : '+ Добавить'}
                 </button>
@@ -416,7 +415,7 @@ export default function EmployeeDetail({
               >
                 <polyline
                   fill="none"
-                  stroke="#84cc16"
+                  stroke="#60a5fa"
                   strokeWidth="2"
                   points={pts
                     .map(
@@ -431,7 +430,7 @@ export default function EmployeeDetail({
                     cx={i * 80}
                     cy={100 - (p / maxR) * 90 - 5}
                     r="3"
-                    fill="#4d7c0f"
+                    fill="#1e40af"
                   />
                 ))}
               </svg>
@@ -454,9 +453,7 @@ export default function EmployeeDetail({
                   <p className="text-xs text-stone-500">{h.detail}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-mono text-stone-600">
-                    Ri {Math.round(h.riskAt * 100)}
-                  </p>
+                  <p className="text-xs text-stone-600">Ri {Math.round(h.riskAt * 100)}</p>
                   <p className="text-[10px] text-stone-400">
                     {new Date(h.date).toLocaleDateString('ru')}
                   </p>
@@ -486,15 +483,11 @@ export default function EmployeeDetail({
                       : 'bg-stone-50 border-stone-200'
                   }`}
                 >
-                  <span className="text-xs font-mono text-stone-400 w-6">
-                    {WEEKDAYS[ev.day]}
-                  </span>
+                  <span className="text-xs text-stone-400 w-6">{WEEKDAYS[ev.day]}</span>
                   <span className="text-sm text-stone-800 flex-1 truncate">
                     {ev.title}
                   </span>
-                  <span className="text-xs font-mono text-stone-500">
-                    {ev.startHour}:00–{ev.endHour}:00
-                  </span>
+                  <span className="text-xs text-stone-500">{ev.startHour}:00–{ev.endHour}:00</span>
                   {!inSchedule && ev.type !== 'focus' && (
                     <Badge color="red">вне графика</Badge>
                   )}
@@ -506,16 +499,16 @@ export default function EmployeeDetail({
 
         {/* Рекомендации */}
         <div className="bg-white border border-stone-200 rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Icon name="bulb" className="w-4 h-4 text-lime-600" />
-            <h2 className="font-bold text-stone-900">Рекомендации</h2>
-          </div>
-          <div className="space-y-2">
-            {m.recommendations.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-start gap-3 border-l-4 border-l-lime-500 bg-lime-50 rounded-lg px-4 py-3"
-              >
+            <div className="flex items-center gap-2 mb-3">
+              <Icon name="bulb" className="w-4 h-4 text-sky-600" />
+              <h2 className="font-bold text-stone-900">Рекомендации</h2>
+            </div>
+            <div className="space-y-2">
+              {m.recommendations.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-start gap-3 border-l-4 border-l-sky-500 bg-sky-50 rounded-lg px-4 py-3"
+                >
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-stone-900">
                     {r.action}
@@ -567,7 +560,7 @@ function Metric({
         {label}
       </p>
       <p
-        className={`text-2xl font-bold font-mono ${
+        className={`text-2xl font-bold ${
           alert ? 'text-red-700' : 'text-stone-900'
         }`}
       >
