@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorkTime Sync - Кейc №3</title>
+    <style>
+      :root {
+        --bg: #f5f3ef;
+        --paper: #fffdf9;
+        --ink: #1f2937;
+        --muted: #6b7280;
+        --line: #ddd6ce;
+        --accent: #0f766e;
+        --accent-soft: #ccfbf1;
+        --warn: #b45309;
+        --warn-soft: #fef3c7;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, #d1fae5 0, transparent 28%),
+          radial-gradient(circle at bottom right, #fde68a 0, transparent 22%),
+          var(--bg);
+      }
+
+      .deck {
+        width: min(1080px, calc(100vw - 40px));
+        margin: 24px auto 64px;
+      }
+
+      .slide {
+        min-height: 620px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        padding: 32px 36px;
+        margin-bottom: 24px;
+        box-shadow: 0 16px 60px rgba(31, 41, 55, 0.08);
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 18px;
+        page-break-after: always;
+      }
+
+      .topline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--muted);
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1, h2 {
+        margin: 0;
+        line-height: 1;
+      }
+
+      h1 {
+        font-size: 46px;
+        letter-spacing: -0.04em;
+      }
+
+      h2 {
+        font-size: 32px;
+        letter-spacing: -0.03em;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      .lead {
+        font-size: 18px;
+        max-width: 820px;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      .grid-hero {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 24px;
+        align-items: stretch;
+      }
+
+      .card {
+        background: #ffffff;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 18px;
+      }
+
+      .accent {
+        background: linear-gradient(135deg, #f0fdfa, #ecfeff);
+        border-color: #99f6e4;
+      }
+
+      .warn {
+        background: linear-gradient(135deg, #fff7ed, #fffbeb);
+        border-color: #fed7aa;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 20px;
+        line-height: 1.6;
+      }
+
+      li + li {
+        margin-top: 8px;
+      }
+
+      .placeholder {
+        height: 300px;
+        border: 2px dashed #cbd5e1;
+        border-radius: 22px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 18px;
+        text-align: center;
+        padding: 20px;
+        background:
+          linear-gradient(135deg, rgba(255,255,255,0.9), rgba(241,245,249,0.8)),
+          repeating-linear-gradient(
+            -45deg,
+            rgba(148,163,184,0.08) 0,
+            rgba(148,163,184,0.08) 8px,
+            transparent 8px,
+            transparent 16px
+          );
+      }
+
+      .slide-image {
+        width: 100%;
+        height: 300px;
+        object-fit: contain;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        display: block;
+        background: #fff;
+      }
+
+      .slide-image.tall {
+        height: 240px;
+      }
+
+      .slide-image.split {
+        height: 190px;
+      }
+
+      .formula {
+        font-family: "SF Mono", "Menlo", monospace;
+        font-size: 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 16px 18px;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .note {
+        font-size: 15px;
+        color: var(--muted);
+      }
+
+      .big-number {
+        font-size: 60px;
+        line-height: 1;
+        color: var(--accent);
+        font-weight: 700;
+        letter-spacing: -0.06em;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: #115e59;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .cols-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      @media print {
+        body {
+          background: white;
+        }
+
+        .deck {
+          width: 100%;
+          margin: 0;
+        }
+
+        .slide {
+          margin: 0;
+          border-radius: 0;
+          box-shadow: none;
+          border: none;
+          min-height: 100vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <section class="slide">
+        <div class="topline">
+          <span>Кейс №3</span>
+          <span>Слайд 1</span>
+        </div>
+        <div class="grid-hero">
+          <div>
+            <span class="tag">WorkTime Sync</span>
+            <h1 style="margin-top: 16px;">Система по актуализации рабочего времени сотрудников</h1>
+            <p class="lead" style="margin-top: 18px;">
+              Интеллектуальная веб-платформа, которая анализирует актуальность графиков,
+              выявляет конфликты между источниками данных и помогает планировать работу
+              на основе реальной доступности команды.
+            </p>
+            <div class="card accent" style="margin-top: 28px;">
+              <p><strong>Проблема:</strong> данные о рабочем времени сотрудников разбросаны по календарям, HR-системе, задачам, табелям и обновляются нерегулярно.</p>
+              <p style="margin-top: 10px;"><strong>Результат:</strong> встречи попадают вне рабочего времени, команда теряет время на ручную координацию.</p>
+            </div>
+          </div>
+          <div class="card warn">
+            <div class="big-number">4</div>
+            <p style="font-size: 22px; font-weight: 700; margin-top: 8px;">главных вопроса кейса</p>
+            <ul style="margin-top: 18px;">
+              <li>У кого высокий риск и почему?</li>
+              <li>Где уже есть конфликты?</li>
+              <li>Кто должен первым обновить график?</li>
+              <li>Когда можно назначить общую встречу?</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer">
+          <span>Короткий вход в проблему</span>
+          <span>20-25 секунд</span>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topline">
+          <span>Решение кейса</span>
+          <span>Слайд 2</span>
+        </div>
+        <div class="grid-2">
+          <div>
+            <h2>Что мы предлагаем</h2>
+            <p class="lead" style="margin-top: 14px;">
+              WorkTime Sync — единая точка, где сотрудник, руководитель, HR и
+              проектный менеджер видят актуальность графиков, конфликты, доступность
+              команды и рекомендации по действиям.
+            </p>
+            <div class="cols-3" style="margin-top: 26px;">
+              <div class="card"><strong>Окно проекта</strong><br><span class="note">Проект, роли и участники</span></div>
+              <div class="card"><strong>Dashboard</strong><br><span class="note">Общая ситуация по команде</span></div>
+              <div class="card"><strong>Diagnostics</strong><br><span class="note">Актуальность и риски</span></div>
+              <div class="card"><strong>Conflicts</strong><br><span class="note">Автопоиск проблем в расписании</span></div>
+              <div class="card"><strong>Meeting Finder</strong><br><span class="note">Подбор окна для встречи</span></div>
+              <div class="card"><strong>AI Assistant</strong><br><span class="note">Быстрый доступ к выводам</span></div>
+            </div>
+          </div>
+          <img src="./photo/dashboard.png" alt="Главный дашборд WorkTime Sync" class="slide-image" />
+        </div>
+        <div class="footer">
+          <span>Главная ценность продукта</span>
+          <span>25-30 секунд</span>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topline">
+          <span>MVP по кейсу</span>
+          <span>Слайд 3</span>
+        </div>
+        <div class="grid-2">
+          <div>
+            <h2>Как наш MVP закрывает требования кейса</h2>
+            <ul style="margin-top: 18px;">
+              <li>Авторизация и работа с проектами</li>
+              <li>Профили сотрудников: дни, часы, часовой пояс, формат работы</li>
+              <li>Исключения: отпуск, больничный, командировка</li>
+              <li>Имитация данных из календаря, HR и других источников</li>
+              <li>Автоматический расчёт показателей и рисков</li>
+              <li>Аналитика, диагностика, рекомендации и уведомления</li>
+            </ul>
+            <div class="formula" style="margin-top: 24px;">
+              Frontend (React + Vite) &lt;-&gt; API (FastAPI) &lt;-&gt; SQLite / источники
+            </div>
+          </div>
+          <div>
+            <div class="card accent">
+              <p><strong>Для MVP важно:</strong> у нас уже не просто форма хранения графиков, а рабочий аналитический контур, как и требуется в задании.</p>
+            </div>
+            <img src="./photo/postion_employee.png" alt="Профиль сотрудника или экран проекта WorkTime Sync" class="slide-image tall" style="margin-top: 18px;" />
+          </div>
+        </div>
+        <div class="footer">
+          <span>Показать, что решение уже живое</span>
+          <span>20-25 секунд</span>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topline">
+          <span>Аналитика</span>
+          <span>Слайд 4</span>
+        </div>
+        <div class="grid-2">
+          <div>
+            <h2>Какие показатели мы считаем в коде</h2>
+            <div class="card" style="margin-top: 18px;">
+              <ul>
+                <li>Актуальность графика и дни с последнего обновления</li>
+                <li>Доля встреч вне рабочего времени и количество конфликтов</li>
+                <li>Уровень загрузки и интегральный риск неактуальности</li>
+                <li>Командное окно доступности и приоритет актуализации</li>
+                <li>Рекомендованное время для встречи</li>
+              </ul>
+            </div>
+            <div class="card warn" style="margin-top: 18px;">
+              <p><strong>Ключевой акцент:</strong> в кейсе было важно не только придумать формулы, но и реализовать их в работающем коде.</p>
+            </div>
+          </div>
+          <div>
+            <img src="./photo/conflicts.png" alt="Поиск конфликтов в WorkTime Sync" class="slide-image split" />
+            <img src="./photo/meeting.png" alt="Подбор времени для встречи в WorkTime Sync" class="slide-image split" style="margin-top: 18px;" />
+          </div>
+        </div>
+        <div class="footer">
+          <span>Самая сильная бизнес-логика</span>
+          <span>25-30 секунд</span>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topline">
+          <span>AI-модуль</span>
+          <span>Слайд 5</span>
+        </div>
+        <div class="grid-2">
+          <div>
+            <h2>Как у нас реализована AI-часть кейса</h2>
+            <p class="lead" style="margin-top: 16px;">
+              Пользователь может не искать вручную по экранам, а задать вопрос простым языком и быстро получить прикладной ответ по данным команды.
+            </p>
+            <div class="card accent" style="margin-top: 24px;">
+              <ul>
+                <li>Кто перегружен?</li>
+                <li>У кого устарел график?</li>
+                <li>Когда команда доступна?</li>
+                <li>С кого начать актуализацию?</li>
+              </ul>
+            </div>
+          </div>
+          <img src="./photo/ai_assistent.png" alt="AI-ассистент WorkTime Sync" class="slide-image" />
+        </div>
+        <div class="footer">
+          <span>Закрывает быстрые управленческие вопросы</span>
+          <span>20-25 секунд</span>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="topline">
+          <span>Развитие</span>
+          <span>Слайд 6</span>
+        </div>
+        <div class="grid-2">
+          <div>
+            <h2>Что дальше</h2>
+            <ul style="margin-top: 18px;">
+              <li>Реальные интеграции с календарями, HR и таск-трекером</li>
+              <li>Автоматические уведомления и запросы на подтверждение графика</li>
+              <li>Создание встреч прямо из найденного окна</li>
+              <li>История изменений и контроль актуальности</li>
+              <li>Более сильный AI-слой поверх реальных данных</li>
+            </ul>
+          </div>
+          <div class="card accent">
+            <p style="font-size: 28px; font-weight: 700; line-height: 1.2;">
+              Мы закрыли аналитический MVP на синтетических данных и показали, как рабочее время превращается из статичной записи в инструмент планирования и управления нагрузкой.
+            </p>
+            <p class="note" style="margin-top: 18px;">
+              Этим слайдом удобно завершать доклад и переходить к вопросам ментора.
+            </p>
+          </div>
+        </div>
+        <div class="footer">
+          <span>Финал и развитие</span>
+          <span>20 секунд</span>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
