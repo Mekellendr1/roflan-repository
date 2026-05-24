@@ -183,7 +183,10 @@ def employee_to_dict(emp: Employee) -> dict:
     """Полный EmployeeComputed под фронтовый тип."""
     return {
         "id": emp.id,
+<<<<<<< HEAD
         "userId": emp.user_id,
+=======
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
         "name": emp.name,
         "initials": emp.initials,
         "role": emp.role,

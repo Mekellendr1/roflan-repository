@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useEffect, useRef, useState, useCallback } from 'react'
+=======
+import { useEffect, useState } from 'react'
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 import Sidebar from './components/Sidebar'
 import Icon from './components/Icon'
 import AIAssistant from './components/AIAssistant'
@@ -17,6 +21,7 @@ import Sources from './pages/Sources'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDetail from './pages/ProjectDetail'
 import AuthPage from './pages/AuthPage'
+<<<<<<< HEAD
 import ProfileSetup from './pages/ProfileSetup'
 import MyProfile from './pages/MyProfile'
 import { hydrateFromList } from './lib/derived'
@@ -24,6 +29,10 @@ import { computeAll } from './lib/metrics'
 import { http } from './lib/api'
 import { apiGetProjects } from './lib/authApi'
 import { StoreProvider } from './lib/store'
+=======
+import { hydrateFromList } from './lib/derived'
+import { StoreProvider, useStore } from './lib/store'
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 import { AuthProvider, useAuth } from './lib/authContext'
 import type { ProjectRole } from './lib/authTypes'
 
@@ -31,6 +40,7 @@ function AppShell() {
   const [route, setRoute] = useState('projects')
   const [history, setHistory] = useState<string[]>(['projects'])
   const [aiOpen, setAiOpen] = useState(false)
+<<<<<<< HEAD
 
   const [activeProjectName, setActiveProjectName] = useState<string | null>(null)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
@@ -96,10 +106,27 @@ function AppShell() {
   }, [activeProjectId, loadProjectEmployees])
 
   // Загружаем проекты при входе
+=======
+  const [activeProjectName, setActiveProjectName] = useState<string | null>(null)
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
+  const [activeProjectRole, setActiveProjectRole] = useState<ProjectRole | null>(null)
+  const [renameMode, setRenameMode] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+  const [projects, setProjects] = useState<any[]>([])
+  const { employees } = useStore()
+  const { user, loading: authLoading, logout } = useAuth()
+
+  useEffect(() => {
+    hydrateFromList(employees)
+  }, [employees])
+
+  // Load projects for the current user and restore last opened
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
   useEffect(() => {
     if (!user) return
     const token = localStorage.getItem('wt_token')
     if (!token) return
+<<<<<<< HEAD
     let alive = true
 
     apiGetProjects(token)
@@ -123,10 +150,36 @@ function AppShell() {
 
   useEffect(() => {
     const onPop = () => {
+=======
+    let mounted = true
+    import('./lib/authApi').then(({ apiGetProjects }) => {
+      apiGetProjects(token)
+        .then((list) => {
+          if (!mounted) return
+          setProjects(list)
+          const last = localStorage.getItem('wt_last_project')
+          if (last && list.find((p: any) => p.id === last)) {
+            updateRoute(`project/${last}`)
+          }
+        })
+        .catch(() => {
+          // ignore
+        })
+    })
+    return () => {
+      mounted = false
+    }
+  }, [user])
+
+  // Syncs route with browser history
+  useEffect(() => {
+    const handlePopState = () => {
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
       const path = window.location.pathname.slice(1) || 'projects'
       setRoute(path)
       setHistory((h) => h.slice(0, -1))
     }
+<<<<<<< HEAD
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
@@ -136,10 +189,23 @@ function AppShell() {
       const next = history.slice(0, -1)
       setHistory(next)
       setRoute(next[next.length - 1])
+=======
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  // Navigate back
+  const goBack = () => {
+    if (history.length > 1) {
+      const newHistory = history.slice(0, -1)
+      setHistory(newHistory)
+      setRoute(newHistory[newHistory.length - 1])
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
       window.history.back()
     }
   }
 
+<<<<<<< HEAD
   const updateRoute = (r: string) => {
     setRoute(r)
     setHistory((h) => [...h, r])
@@ -158,6 +224,30 @@ function AppShell() {
     if (pid) loadProjectEmployees(pid, false)
   }, [loadProjectEmployees])
 
+=======
+  // Updates browser URL when route changes
+  const updateRoute = (newRoute: string) => {
+    setRoute(newRoute)
+    setHistory((h) => [...h, newRoute])
+    window.history.pushState(null, '', `/${newRoute}`)
+  }
+
+  const handleRenameProject = async (projectId: string, newName: string) => {
+    if (newName.trim() && projectId === activeProjectId) {
+      // Here you would call your API to update the project name
+      // apiUpdateProjectName(projectId, newName)
+      setActiveProjectName(newName)
+      setProjects((p) =>
+        p.map((proj) =>
+          proj.id === projectId ? { ...proj, name: newName } : proj
+        )
+      )
+      setRenameMode(false)
+      setNewProjectName('')
+    }
+  }
+
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-400 text-sm">
@@ -166,12 +256,22 @@ function AppShell() {
     )
   }
 
+<<<<<<< HEAD
   if (!user) return <AuthPage />
   if (!user.profile_filled) return <ProfileSetup onDone={() => {}} />
 
   function renderPage() {
     if (route.startsWith('emp/')) {
       return <EmployeeDetail empId={route.slice(4)} onBack={goBack} setRoute={updateRoute} currentRole={activeProjectRole} />
+=======
+  if (!user) {
+    return <AuthPage />
+  }
+
+  function render() {
+    if (route.startsWith('emp/')) {
+      return <EmployeeDetail empId={route.slice(4)} onBack={goBack} setRoute={updateRoute} />
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
     }
     if (route.startsWith('project/')) {
       const projectId = route.slice('project/'.length)
@@ -182,6 +282,7 @@ function AppShell() {
           setRoute={updateRoute}
           onProjectLoaded={(name, role) => {
             setActiveProjectName(name)
+<<<<<<< HEAD
             setActiveProjectRole(role)
             localStorage.setItem('wt_last_project', projectId)
             // Меняем activeProjectId только если это другой проект
@@ -192,10 +293,16 @@ function AppShell() {
             }
           }}
           onMembersChanged={handleMembersChanged}
+=======
+            setActiveProjectId(projectId)
+            setActiveProjectRole(role)
+          }}
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
         />
       )
     }
     switch (route) {
+<<<<<<< HEAD
       case 'dashboard':        return <Dashboard setRoute={updateRoute} currentRole={activeProjectRole} />
       case 'analytics':        return <Analytics />
       case 'employees':        return <Employees setRoute={updateRoute} currentRole={activeProjectRole} />
@@ -210,6 +317,34 @@ function AppShell() {
       case 'my-profile':       return <MyProfile onBack={goBack} />
       case 'projects':         return <ProjectsPage setRoute={updateRoute} />
       default:                 return <Dashboard setRoute={updateRoute} />
+=======
+      case 'dashboard':
+        return <Dashboard setRoute={updateRoute} />
+      case 'analytics':
+        return <Analytics />
+      case 'employees':
+        return <Employees setRoute={updateRoute} />
+      case 'diagnostics':
+        return <Diagnostics setRoute={updateRoute} />
+      case 'map':
+        return <AvailabilityMap />
+      case 'meeting':
+        return <MeetingFinder />
+      case 'conflicts':
+        return <Conflicts setRoute={updateRoute} />
+      case 'recommendations':
+        return <Recommendations setRoute={updateRoute} />
+      case 'roadmap':
+        return <Roadmap setRoute={updateRoute} />
+      case 'notifications':
+        return <Notifications setRoute={updateRoute} />
+      case 'sources':
+        return <Sources />
+      case 'projects':
+        return <ProjectsPage setRoute={updateRoute} />
+      default:
+        return <Dashboard setRoute={updateRoute} />
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
     }
   }
 
@@ -225,11 +360,16 @@ function AppShell() {
           currentProjectId={activeProjectId}
           currentRole={activeProjectRole}
           projects={projects}
+<<<<<<< HEAD
           onSelectProject={(id) => {
             localStorage.setItem('wt_last_project', id)
             // Сначала меняем ref и state, потом роут
             activeProjectIdRef.current = id
             setActiveProjectId(id)
+=======
+          onSelectProject={(id: string) => {
+            localStorage.setItem('wt_last_project', id)
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
             updateRoute(`project/${id}`)
           }}
           onRenameProject={handleRenameProject}
@@ -239,12 +379,17 @@ function AppShell() {
           <button
             onClick={() => updateRoute('projects')}
             className="flex flex-col items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+<<<<<<< HEAD
+=======
+            title="Проекты"
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
           >
             <Icon name="project" className="w-6 h-6" />
             <span className="text-xs font-medium">Проекты</span>
           </button>
         </div>
       )}
+<<<<<<< HEAD
 
       {/* key=dataKey: перемонтирует страницы только при смене проекта */}
       <main key={dataKey} className="flex-1 min-w-0">
@@ -255,6 +400,9 @@ function AppShell() {
         ) : renderPage()}
       </main>
 
+=======
+      <main className="flex-1 min-w-0">{render()}</main>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
       {aiOpen && <AIAssistant onClose={() => setAiOpen(false)} />}
     </div>
   )
@@ -268,4 +416,8 @@ export default function App() {
       </StoreProvider>
     </AuthProvider>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5

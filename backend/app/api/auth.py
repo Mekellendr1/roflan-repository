@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 """Маршруты аутентификации.
 
 POST /auth/register  — регистрация
 POST /auth/login     — вход (JWT)
+=======
+"""Маршруты аутентификации и управления аккаунтами.
+
+POST /auth/register  — регистрация
+POST /auth/login     — вход (получение JWT)
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 GET  /auth/me        — текущий пользователь
 """
 
@@ -11,20 +18,33 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+<<<<<<< HEAD
 from pydantic import BaseModel
+=======
+from pydantic import BaseModel, EmailStr
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
+<<<<<<< HEAD
 from app.models import Project, ProjectMember, User
+=======
+from app.models import User
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+<<<<<<< HEAD
 DEMO_PROJECT_ID = "demo-project-001"
 
+=======
+
+# ─── helpers ──────────────────────────────────────────────────────────────────
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 
 def hash_password(plain: str) -> str:
     return pwd_context.hash(plain)
@@ -46,7 +66,11 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 def get_current_user(
     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
+<<<<<<< HEAD
     exc = HTTPException(
+=======
+    credentials_exc = HTTPException(
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Недействительный токен",
         headers={"WWW-Authenticate": "Bearer"},
@@ -55,6 +79,7 @@ def get_current_user(
         payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
         user_id: str | None = payload.get("sub")
         if user_id is None:
+<<<<<<< HEAD
             raise exc
     except JWTError:
         raise exc
@@ -65,6 +90,20 @@ def get_current_user(
     return user
 
 
+=======
+            raise credentials_exc
+    except JWTError:
+        raise credentials_exc
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None or not user.is_active:
+        raise credentials_exc
+    return user
+
+
+# ─── schemas ──────────────────────────────────────────────────────────────────
+
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 class RegisterRequest(BaseModel):
     email: str
     username: str
@@ -82,12 +121,20 @@ class UserOut(BaseModel):
     email: str
     username: str
     full_name: str
+<<<<<<< HEAD
     profile_filled: bool
+=======
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
     created_at: datetime
 
     model_config = {"from_attributes": True}
 
 
+<<<<<<< HEAD
+=======
+# ─── endpoints ────────────────────────────────────────────────────────────────
+
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email).first():
@@ -100,12 +147,16 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         username=body.username,
         hashed_password=hash_password(body.password),
         full_name=body.full_name,
+<<<<<<< HEAD
         profile_filled=False,
+=======
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
     )
     db.add(user)
     db.commit()
     db.refresh(user)
 
+<<<<<<< HEAD
     # Добавляем в демо-проект как Сотрудника
     demo = db.query(Project).filter(Project.id == DEMO_PROJECT_ID).first()
     if demo:
@@ -117,11 +168,21 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
             db.add(ProjectMember(project_id=DEMO_PROJECT_ID, user_id=user.id, role="Сотрудник"))
             db.commit()
 
+=======
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
     return user
 
 
 @router.post("/login", response_model=TokenResponse)
+<<<<<<< HEAD
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+=======
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    # username может быть email или username
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
     user = (
         db.query(User).filter(User.email == form_data.username).first()
         or db.query(User).filter(User.username == form_data.username).first()

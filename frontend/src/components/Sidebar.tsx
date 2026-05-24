@@ -125,26 +125,41 @@ export default function Sidebar({
           <div className="w-10 h-10 rounded-lg accent-bar flex items-center justify-center flex-shrink-0">
             <Icon name="clock" className="w-5 h-5 text-white" />
           </div>
+<<<<<<< HEAD
           <div className="flex-1 min-w-0">
             {renameMode ? (
               <div className="flex items-center gap-1.5">
+=======
+          <div className="flex-1 flex items-center justify-between">
+            {renameMode ? (
+              <div className="flex-1 flex items-center gap-2 mr-2">
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                 <input
                   type="text"
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   onKeyDown={handleKeyDown}
                   autoFocus
+<<<<<<< HEAD
                   className="flex-1 min-w-0 px-2 py-1 text-sm border border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
                 <button
                   onClick={handleRename}
                   className="p-1 text-green-600 hover:bg-green-50 rounded cursor-pointer transition-colors flex-shrink-0"
+=======
+                  className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <button
+                  onClick={handleRename}
+                  className="p-1 text-green-600 hover:bg-green-50 rounded cursor-pointer transition-colors"
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                   title="Сохранить"
                 >
                   <Icon name="check" className="w-4 h-4" />
                 </button>
               </div>
             ) : (
+<<<<<<< HEAD
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setOpen((s) => !s)}
@@ -176,6 +191,41 @@ export default function Sidebar({
                   <Icon name="edit" className="w-3.5 h-3.5" />
                 </button>
               </div>
+=======
+              <button
+                onClick={() => setOpen((s) => !s)}
+                className="flex-1 flex items-center justify-between text-left hover:opacity-75 transition-opacity cursor-pointer group"
+                aria-haspopup
+                aria-expanded={open}
+                title="Выбрать проект"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 text-sm leading-tight truncate">
+                    {currentProjectName || 'WorkTime'}
+                  </p>
+                  <p className="text-xs text-gray-500 leading-tight">v1.0</p>
+                </div>
+                <div
+                  className={`text-gray-400 group-hover:text-gray-600 transition-transform flex-shrink-0 ml-2 ${
+                    open ? 'rotate-180' : ''
+                  }`}
+                >
+                  <Icon name="chevron" className="w-4 h-4" />
+                </div>
+              </button>
+            )}
+            {!renameMode && (
+              <button
+                onClick={() => {
+                  setRenameMode(true)
+                  setNewProjectName(currentProjectName || '')
+                }}
+                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+                title="Переименовать"
+              >
+                <Icon name="edit" className="w-4 h-4" />
+              </button>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
             )}
           </div>
         </div>
@@ -284,11 +334,15 @@ export default function Sidebar({
           Помощник
         </button>
 
+<<<<<<< HEAD
         <button
           onClick={() => setRoute('my-profile')}
           className="w-full flex items-center gap-3 px-2 py-2 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors text-left cursor-pointer"
           title="Мой профиль"
         >
+=======
+        <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-gray-50 border border-gray-200">
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
           <div className="w-9 h-9 rounded-md bg-blue-900 text-white text-xs font-bold flex items-center justify-center shrink-0">
             {initials(displayName)}
           </div>
@@ -297,13 +351,21 @@ export default function Sidebar({
             <p className="text-xs text-gray-500 truncate">{user?.email}</p>
           </div>
           <button
+<<<<<<< HEAD
             onClick={(e) => { e.stopPropagation(); onLogout() }}
+=======
+            onClick={onLogout}
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
             title="Выйти"
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0 cursor-pointer"
           >
             <Icon name="logout" className="w-4 h-4" />
           </button>
+<<<<<<< HEAD
         </button>
+=======
+        </div>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
       </div>
     </aside>
   )

@@ -228,6 +228,7 @@ export function computeMetrics(emp: Employee): EmployeeComputed {
 }
 
 export function computeAll(employees: Employee[]): EmployeeComputed[] {
+<<<<<<< HEAD
   return employees.map((emp) => {
     // Защита от undefined полей (данные с бэка могут быть неполными)
     const safe = {
@@ -237,6 +238,9 @@ export function computeAll(employees: Employee[]): EmployeeComputed[] {
     }
     return computeMetrics(safe)
   })
+=======
+  return employees.map(computeMetrics)
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 }
 
 // ===== Командное окно доступности: Tteam = W1 ∩ W2 ∩ ... ∩ Wn (раздел 8) =====

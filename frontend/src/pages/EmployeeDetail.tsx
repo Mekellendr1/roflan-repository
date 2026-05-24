@@ -1,14 +1,23 @@
 import { useState } from 'react'
+<<<<<<< HEAD
 import { RISK_WEIGHTS, computeAll } from '../lib/metrics'
 import { WEEKDAYS } from '../lib/mockData'
 import { getEmployee, hydrateFromList, getMyEmployee } from '../lib/derived'
 import { COMPUTED } from '../lib/derived'
 import { useAuth } from '../lib/authContext'
+=======
+import { RISK_WEIGHTS } from '../lib/metrics'
+import { WEEKDAYS } from '../lib/mockData'
+import { useStore } from '../lib/store'
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 import { avatarColor, riskColor } from '../lib/utils'
 import { Avatar, Badge, RiskGauge } from '../components/Primitives'
 import Icon from '../components/Icon'
 import TopBar, { GhostButton } from '../components/TopBar'
+<<<<<<< HEAD
 import { http } from '../lib/api'
+=======
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 import type { ExceptionType, WorkFormat } from '../lib/types'
 
 const EXC_LABEL: Record<string, string> = {
@@ -19,6 +28,7 @@ const EXC_LABEL: Record<string, string> = {
 }
 const FORMATS: WorkFormat[] = ['Офис', 'Удалёнка', 'Гибрид']
 
+<<<<<<< HEAD
 function authHeader() {
   const token = localStorage.getItem('wt_token') || ''
   return { headers: { Authorization: `Bearer ${token}` } }
@@ -64,6 +74,24 @@ export default function EmployeeDetail({
   const canEdit = isMyProfile
     || currentRole === 'Администратор'
     || currentRole === 'HR-специалист'
+=======
+export default function EmployeeDetail({
+  empId,
+  setRoute,
+}: {
+  empId: string
+  setRoute: (r: string) => void
+}) {
+  const {
+    getEmployee,
+    confirmActuality,
+    updateSchedule,
+    updateFormat,
+    addException,
+    removeException,
+  } = useStore()
+  const e = getEmployee(empId)
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 
   const [editSched, setEditSched] = useState(false)
   const [start, setStart] = useState(e?.schedule.startHour ?? 9)
@@ -72,18 +100,27 @@ export default function EmployeeDetail({
   const [showExc, setShowExc] = useState(false)
   const [excType, setExcType] = useState<ExceptionType>('vacation')
   const [excNote, setExcNote] = useState('')
+<<<<<<< HEAD
   const [saving, setSaving] = useState(false)
   const [tick, setTick] = useState(0) // форсирует перерендер после мутаций
+=======
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 
   if (!e)
     return (
       <div className="p-8">
+<<<<<<< HEAD
         <TopBar title="Не найден" subtitle="Сотрудник не найден в текущем проекте">
           <GhostButton icon="back" label="К списку" onClick={() => setRoute('employees')} />
         </TopBar>
       </div>
     )
 
+=======
+        <TopBar title="Не найден" />
+      </div>
+    )
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
   const m = e.metrics
   const rc = riskColor[m.riskLevel]
 
@@ -96,10 +133,15 @@ export default function EmployeeDetail({
   ]
 
   const history = e.history ?? []
+<<<<<<< HEAD
+=======
+  // точки графика динамики риска
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
   const pts = history.map((h) => h.riskAt)
   const maxR = Math.max(0.5, ...pts)
 
   const toggleDay = (d: number) =>
+<<<<<<< HEAD
     setDays((arr) => arr.includes(d) ? arr.filter((x) => x !== d) : [...arr, d].sort())
 
   async function handleConfirmActuality() {
@@ -173,11 +215,34 @@ export default function EmployeeDetail({
     } finally {
       setSaving(false)
     }
+=======
+    setDays((arr) =>
+      arr.includes(d) ? arr.filter((x) => x !== d) : [...arr, d].sort()
+    )
+
+  const saveSched = () => {
+    updateSchedule(e.id, { days, startHour: start, endHour: end })
+    setEditSched(false)
+  }
+
+  const saveExc = () => {
+    if (!excNote.trim()) return
+    addException(e.id, {
+      type: excType,
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 5 * 864e5).toISOString(),
+      note: excNote,
+      source: 'Добавлено вручную',
+    })
+    setExcNote('')
+    setShowExc(false)
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
   }
 
   return (
     <div className="fade-in">
       <TopBar title={e.name} subtitle={`${e.role} · ${e.team}`}>
+<<<<<<< HEAD
         {canEdit && (
           <button
             onClick={handleConfirmActuality}
@@ -189,18 +254,45 @@ export default function EmployeeDetail({
           </button>
         )}
         <GhostButton icon="back" label="К списку" onClick={() => setRoute('employees')} />
+=======
+        <button
+          onClick={() => confirmActuality(e.id)}
+          className="px-3 py-2 text-sm rounded-lg bg-sky-500 text-white hover:bg-sky-400 font-semibold flex items-center gap-2"
+        >
+          <Icon name="check" className="w-4 h-4" />
+          Подтвердить актуальность
+        </button>
+        <GhostButton
+          icon="back"
+          label="К списку"
+          onClick={() => setRoute('employees')}
+        />
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
       </TopBar>
 
       <div className="p-8 space-y-6">
         {/* Шапка профиля */}
         <div className="bg-white border border-stone-200 rounded-xl p-6">
           <div className="flex items-start gap-5">
+<<<<<<< HEAD
             <Avatar initials={e.initials} color={avatarColor(m.riskLevel)} size="lg" />
+=======
+            <Avatar
+              initials={e.initials}
+              color={avatarColor(m.riskLevel)}
+              size="lg"
+            />
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
             <div className="flex-1">
               <p className="text-xl font-bold text-stone-900">{e.name}</p>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-stone-500">
                 <span className="flex items-center gap-1">
+<<<<<<< HEAD
                   <Icon name="pin" className="w-3.5 h-3.5" /> {e.timezone} (UTC{e.tzOffset >= 0 ? '+' + e.tzOffset : e.tzOffset})
+=======
+                  <Icon name="pin" className="w-3.5 h-3.5" /> {e.timezone} (UTC
+                  {e.tzOffset >= 0 ? '+' + e.tzOffset : e.tzOffset})
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                 </span>
                 <span className="flex items-center gap-1">
                   <Icon name="clock" className="w-3.5 h-3.5" />
@@ -208,6 +300,7 @@ export default function EmployeeDetail({
                 </span>
                 <span className="flex items-center gap-1">
                   <Icon name="building" className="w-3.5 h-3.5" />
+<<<<<<< HEAD
                   {canEdit ? (
                     <select
                       value={e.format}
@@ -227,22 +320,88 @@ export default function EmployeeDetail({
                 </Badge>
                 {m.hrMismatch === 1 && <Badge color="amber">HR: {e.hrFormat}</Badge>}
                 {m.timezoneShift === 1 && <Badge color="amber">смена пояса</Badge>}
+=======
+                  <select
+                    value={e.format}
+                    onChange={(ev) =>
+                      updateFormat(e.id, ev.target.value as WorkFormat)
+                    }
+                    className="text-sm border border-stone-200 rounded px-1.5 py-0.5 bg-white"
+                  >
+                    {FORMATS.map((f) => (
+                      <option key={f}>{f}</option>
+                    ))}
+                  </select>
+                </span>
+              </div>
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <Badge
+                  color={
+                    m.riskLevel === 'critical' || m.riskLevel === 'high'
+                      ? 'red'
+                      : m.riskLevel === 'medium'
+                        ? 'amber'
+                        : 'green'
+                  }
+                >
+                  {rc.label} риск неактуальности
+                </Badge>
+                {m.hrMismatch === 1 && (
+                  <Badge color="amber">HR: {e.hrFormat}</Badge>
+                )}
+                {m.timezoneShift === 1 && (
+                  <Badge color="amber">смена пояса</Badge>
+                )}
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                 {m.hasExceptions && <Badge color="blue">есть исключения</Badge>}
               </div>
             </div>
             <div className="flex flex-col items-center pl-6 border-l border-stone-200">
               <RiskGauge value={m.integralRisk} size={88} />
+<<<<<<< HEAD
               <p className="text-[10px] text-stone-500 uppercase tracking-wider mt-1">интегральный риск</p>
+=======
+              <p className="text-[10px] text-stone-500 uppercase tracking-wider mt-1">
+                интегральный риск
+              </p>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
             </div>
           </div>
         </div>
 
         {/* Показатели */}
         <div className="grid grid-cols-4 gap-3">
+<<<<<<< HEAD
           <Metric label="Актуальность Ai" value={`${Math.round(m.actuality * 100)}%`} sub={`${m.daysSinceUpdate} дн. без обновления`} alert={m.actuality < 0.6} />
           <Metric label="Загрузка Li" value={`${Math.round(m.workload * 100)}%`} sub={`${m.busyHours}ч / ${m.workHours}ч`} alert={m.workload > 0.8} />
           <Metric label="Конфликты Ci" value={`${Math.round(m.outOfHoursRatio * 100)}%`} sub={`${m.meetingsOutOfHours} из ${m.meetingsTotal} встреч`} alert={m.outOfHoursRatio > 0.25} />
           <Metric label="Всего конфликтов" value={m.conflictCount} sub="календарь ↔ график" alert={m.conflictCount > 2} />
+=======
+          <Metric
+            label="Актуальность Ai"
+            value={`${Math.round(m.actuality * 100)}%`}
+            sub={`${m.daysSinceUpdate} дн. без обновления`}
+            alert={m.actuality < 0.6}
+          />
+          <Metric
+            label="Загрузка Li"
+            value={`${Math.round(m.workload * 100)}%`}
+            sub={`${m.busyHours}ч / ${m.workHours}ч`}
+            alert={m.workload > 0.8}
+          />
+          <Metric
+            label="Конфликты Ci"
+            value={`${Math.round(m.outOfHoursRatio * 100)}%`}
+            sub={`${m.meetingsOutOfHours} из ${m.meetingsTotal} встреч`}
+            alert={m.outOfHoursRatio > 0.25}
+          />
+          <Metric
+            label="Всего конфликтов"
+            value={m.conflictCount}
+            sub="календарь ↔ график"
+            alert={m.conflictCount > 2}
+          />
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
         </div>
 
         <div className="grid grid-cols-2 gap-6">
@@ -250,7 +409,13 @@ export default function EmployeeDetail({
           <div className="bg-white border border-stone-200 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <Icon name="formula" className="w-4 h-4 text-stone-500" />
+<<<<<<< HEAD
               <h2 className="font-bold text-stone-900">Из чего складывается риск</h2>
+=======
+              <h2 className="font-bold text-stone-900">
+                Из чего складывается риск
+              </h2>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
             </div>
             <code className="block font-mono text-xs bg-stone-900 text-sky-400 rounded-lg p-3 mb-4">
               Ri = 0.25·(1−Ai) + 0.30·Ci + 0.25·Li + 0.10·Zi + 0.10·Hi
@@ -262,10 +427,24 @@ export default function EmployeeDetail({
                   <div key={p.label}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-stone-600">{p.label}</span>
+<<<<<<< HEAD
                       <span className="text-stone-900">{p.w} × {p.v.toFixed(2)} = {contribution.toFixed(3)}</span>
                     </div>
                     <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
                       <div className="h-full bg-stone-800 rounded-full" style={{ width: `${Math.min(contribution / 0.5, 1) * 100}%` }} />
+=======
+                      <span className="text-stone-900">
+                        {p.w} × {p.v.toFixed(2)} = {contribution.toFixed(3)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-stone-800 rounded-full"
+                        style={{
+                          width: `${Math.min(contribution / 0.5, 1) * 100}%`,
+                        }}
+                      />
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                     </div>
                   </div>
                 )
@@ -273,25 +452,47 @@ export default function EmployeeDetail({
             </div>
             <div className="mt-4 pt-3 border-t border-stone-100 flex justify-between">
               <span className="font-semibold text-stone-900">Итого Ri</span>
+<<<<<<< HEAD
               <span className={`font-bold ${rc.text}`}>{m.integralRisk.toFixed(3)} ({Math.round(m.integralRisk * 100)}/100)</span>
             </div>
           </div>
 
           {/* График + исключения */}
+=======
+              <span className={`font-bold ${rc.text}`}>
+                {m.integralRisk.toFixed(3)} ({Math.round(m.integralRisk * 100)}/100)
+              </span>
+            </div>
+          </div>
+
+          {/* Расписание (редактируемое) + исключения */}
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
           <div className="space-y-4">
             <div className="bg-white border border-stone-200 rounded-xl p-6">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-bold text-stone-900">Заявленный график</h2>
+<<<<<<< HEAD
                 {canEdit && (
                   <button onClick={() => setEditSched((v) => !v)} className="text-sm text-sky-700 font-medium hover:underline cursor-pointer">
                     {editSched ? 'Отмена' : 'Изменить'}
                   </button>
                 )}
               </div>
+=======
+                <button
+                  onClick={() => setEditSched((v) => !v)}
+                  className="text-sm text-sky-700 font-medium hover:underline"
+                >
+                  {editSched ? 'Отмена' : 'Изменить'}
+                </button>
+              </div>
+
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
               {!editSched ? (
                 <>
                   <div className="flex gap-1.5 mb-3">
                     {WEEKDAYS.map((d, i) => (
+<<<<<<< HEAD
                       <div key={d} className={`flex-1 text-center py-2 rounded-lg text-xs font-medium ${e.schedule.days.includes(i) ? 'bg-sky-100 text-sky-800' : 'bg-stone-100 text-stone-400'}`}>{d}</div>
                     ))}
                   </div>
@@ -299,22 +500,86 @@ export default function EmployeeDetail({
                     Рабочие часы: <span className="font-semibold text-stone-900">{e.schedule.startHour}:00–{e.schedule.endHour}:00</span> ({e.tzShort})
                   </p>
                   <p className="text-xs text-stone-500 mt-1">Последнее обновление: {m.daysSinceUpdate} дн. назад</p>
+=======
+                      <div
+                        key={d}
+                        className={`flex-1 text-center py-2 rounded-lg text-xs font-medium ${
+                          e.schedule.days.includes(i)
+                            ? 'bg-sky-100 text-sky-800'
+                            : 'bg-stone-100 text-stone-400'
+                        }`}
+                      >
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-stone-600">
+                    Рабочие часы:{' '}
+                    <span className="font-semibold text-stone-900">
+                      {e.schedule.startHour}:00–{e.schedule.endHour}:00
+                    </span>{' '}
+                    ({e.tzShort})
+                  </p>
+                  <p className="text-xs text-stone-500 mt-1">
+                    Последнее обновление: {m.daysSinceUpdate} дн. назад
+                  </p>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                 </>
               ) : (
                 <div className="space-y-3">
                   <div className="flex gap-1.5">
                     {WEEKDAYS.map((d, i) => (
+<<<<<<< HEAD
                       <button key={d} onClick={() => toggleDay(i)} className={`flex-1 py-2 rounded-lg text-xs font-medium cursor-pointer ${days.includes(i) ? 'bg-sky-500 text-white' : 'bg-stone-100 text-stone-400'}`}>{d}</button>
+=======
+                      <button
+                        key={d}
+                        onClick={() => toggleDay(i)}
+                        className={`flex-1 py-2 rounded-lg text-xs font-medium ${
+                          days.includes(i)
+                            ? 'bg-sky-500 text-white'
+                            : 'bg-stone-100 text-stone-400'
+                        }`}
+                      >
+                        {d}
+                      </button>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                     ))}
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <label className="text-stone-600">С</label>
+<<<<<<< HEAD
                     <input type="number" min={0} max={23} value={start} onChange={(ev) => setStart(Number(ev.target.value))} className="w-16 border border-stone-200 rounded px-2 py-1" />
                     <label className="text-stone-600">До</label>
                     <input type="number" min={1} max={24} value={end} onChange={(ev) => setEnd(Number(ev.target.value))} className="w-16 border border-stone-200 rounded px-2 py-1" />
                   </div>
                   <button onClick={saveSched} disabled={saving} className="px-4 py-2 bg-stone-900 text-white rounded-lg text-sm font-semibold hover:bg-stone-800 disabled:opacity-50 cursor-pointer">
                     {saving ? 'Сохранение...' : 'Сохранить график'}
+=======
+                    <input
+                      type="number"
+                      min={0}
+                      max={23}
+                      value={start}
+                      onChange={(ev) => setStart(Number(ev.target.value))}
+                      className="w-16 border border-stone-200 rounded px-2 py-1"
+                    />
+                    <label className="text-stone-600">До</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={24}
+                      value={end}
+                      onChange={(ev) => setEnd(Number(ev.target.value))}
+                      className="w-16 border border-stone-200 rounded px-2 py-1"
+                    />
+                  </div>
+                  <button
+                    onClick={saveSched}
+                    className="px-4 py-2 bg-stone-900 text-white rounded-lg text-sm font-semibold hover:bg-stone-800"
+                  >
+                    Сохранить график
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                   </button>
                 </div>
               )}
@@ -322,6 +587,7 @@ export default function EmployeeDetail({
 
             <div className="bg-white border border-stone-200 rounded-xl p-6">
               <div className="flex items-center justify-between mb-3">
+<<<<<<< HEAD
                 <h2 className="font-bold text-stone-900">Исключения ({e.exceptions.length})</h2>
                 {canEdit && (
                   <button onClick={() => setShowExc((v) => !v)} className="text-sm text-sky-700 font-medium hover:underline cursor-pointer">
@@ -332,11 +598,34 @@ export default function EmployeeDetail({
               {showExc && (
                 <div className="mb-3 p-3 bg-stone-50 rounded-lg space-y-2">
                   <select value={excType} onChange={(ev) => setExcType(ev.target.value as ExceptionType)} className="w-full border border-stone-200 rounded px-2 py-1.5 text-sm bg-white">
+=======
+                <h2 className="font-bold text-stone-900">
+                  Исключения ({e.exceptions.length})
+                </h2>
+                <button
+                  onClick={() => setShowExc((v) => !v)}
+                  className="text-sm text-sky-700 font-medium hover:underline"
+                >
+                  {showExc ? 'Отмена' : '+ Добавить'}
+                </button>
+              </div>
+
+              {showExc && (
+                <div className="mb-3 p-3 bg-stone-50 rounded-lg space-y-2">
+                  <select
+                    value={excType}
+                    onChange={(ev) =>
+                      setExcType(ev.target.value as ExceptionType)
+                    }
+                    className="w-full border border-stone-200 rounded px-2 py-1.5 text-sm bg-white"
+                  >
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                     <option value="vacation">Отпуск</option>
                     <option value="sick">Больничный</option>
                     <option value="business_trip">Командировка</option>
                     <option value="personal">Личные часы</option>
                   </select>
+<<<<<<< HEAD
                   <input value={excNote} onChange={(ev) => setExcNote(ev.target.value)} placeholder="Например: отпуск 1–7 июня" className="w-full border border-stone-200 rounded px-2 py-1.5 text-sm" />
                   <button onClick={saveExc} disabled={saving} className="px-3 py-1.5 bg-stone-900 text-white rounded-lg text-sm font-semibold hover:bg-stone-800 disabled:opacity-50 cursor-pointer">
                     {saving ? '...' : 'Добавить исключение'}
@@ -356,6 +645,44 @@ export default function EmployeeDetail({
                           <Icon name="x" className="w-4 h-4" />
                         </button>
                       )}
+=======
+                  <input
+                    value={excNote}
+                    onChange={(ev) => setExcNote(ev.target.value)}
+                    placeholder="Например: отпуск 1–7 июня"
+                    className="w-full border border-stone-200 rounded px-2 py-1.5 text-sm"
+                  />
+                  <button
+                    onClick={saveExc}
+                    className="px-3 py-1.5 bg-stone-900 text-white rounded-lg text-sm font-semibold hover:bg-stone-800"
+                  >
+                    Добавить исключение
+                  </button>
+                </div>
+              )}
+
+              {e.exceptions.length === 0 ? (
+                <p className="text-sm text-stone-500">
+                  Нет активных исключений
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {e.exceptions.map((x) => (
+                    <div
+                      key={x.id}
+                      className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2"
+                    >
+                      <Badge color="blue">{EXC_LABEL[x.type]}</Badge>
+                      <span className="text-sm text-stone-700 flex-1">
+                        {x.note}
+                      </span>
+                      <button
+                        onClick={() => removeException(e.id, x.id)}
+                        className="text-stone-400 hover:text-red-500"
+                      >
+                        <Icon name="x" className="w-4 h-4" />
+                      </button>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                     </div>
                   ))}
                 </div>
@@ -364,6 +691,7 @@ export default function EmployeeDetail({
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* История */}
         {pts.length > 0 && (
           <div className="bg-white border border-stone-200 rounded-xl p-6">
@@ -417,10 +745,111 @@ export default function EmployeeDetail({
               })}
             </div>
           )}
+=======
+        {/* История изменений (раздел 3 ТЗ, проблема №11) */}
+        <div className="bg-white border border-stone-200 rounded-xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Icon name="clock" className="w-4 h-4 text-stone-500" />
+            <h2 className="font-bold text-stone-900">
+              История изменений и динамика риска
+            </h2>
+          </div>
+
+          {pts.length > 1 && (
+            <div className="mb-5">
+              <svg
+                viewBox={`0 0 ${Math.max(pts.length - 1, 1) * 80} 100`}
+                className="w-full h-24"
+                preserveAspectRatio="none"
+              >
+                <polyline
+                  fill="none"
+                  stroke="#60a5fa"
+                  strokeWidth="2"
+                  points={pts
+                    .map(
+                      (p, i) =>
+                        `${i * 80},${100 - (p / maxR) * 90 - 5}`
+                    )
+                    .join(' ')}
+                />
+                {pts.map((p, i) => (
+                  <circle
+                    key={i}
+                    cx={i * 80}
+                    cy={100 - (p / maxR) * 90 - 5}
+                    r="3"
+                    fill="#1e40af"
+                  />
+                ))}
+              </svg>
+              <p className="text-xs text-stone-400 mt-1">
+                Динамика Ri по событиям профиля (чем ниже — тем актуальнее)
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {[...history].reverse().map((h) => (
+              <div
+                key={h.id}
+                className="flex items-center gap-3 border-l-4 border-l-stone-300 bg-stone-50 rounded-lg px-4 py-2.5"
+              >
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-stone-900">
+                    {h.action}
+                  </p>
+                  <p className="text-xs text-stone-500">{h.detail}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-stone-600">Ri {Math.round(h.riskAt * 100)}</p>
+                  <p className="text-[10px] text-stone-400">
+                    {new Date(h.date).toLocaleDateString('ru')}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* События */}
+        <div className="bg-white border border-stone-200 rounded-xl p-6">
+          <h2 className="font-bold text-stone-900 mb-3">
+            Фактические события ({e.events.length})
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            {e.events.map((ev) => {
+              const inSchedule =
+                e.schedule.days.includes(ev.day) &&
+                ev.startHour >= e.schedule.startHour &&
+                ev.endHour <= e.schedule.endHour
+              return (
+                <div
+                  key={ev.id}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 border ${
+                    !inSchedule && ev.type !== 'focus'
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-stone-50 border-stone-200'
+                  }`}
+                >
+                  <span className="text-xs text-stone-400 w-6">{WEEKDAYS[ev.day]}</span>
+                  <span className="text-sm text-stone-800 flex-1 truncate">
+                    {ev.title}
+                  </span>
+                  <span className="text-xs text-stone-500">{ev.startHour}:00–{ev.endHour}:00</span>
+                  {!inSchedule && ev.type !== 'focus' && (
+                    <Badge color="red">вне графика</Badge>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
         </div>
 
         {/* Рекомендации */}
         <div className="bg-white border border-stone-200 rounded-xl p-6">
+<<<<<<< HEAD
           <div className="flex items-center gap-2 mb-3">
             <Icon name="bulb" className="w-4 h-4 text-sky-600" />
             <h2 className="font-bold text-stone-900">Рекомендации</h2>
@@ -434,6 +863,38 @@ export default function EmployeeDetail({
                 </div>
                 <Badge color={r.priority === 'high' ? 'red' : r.priority === 'medium' ? 'amber' : 'stone'}>
                   {r.priority === 'high' ? 'высокий' : r.priority === 'medium' ? 'средний' : 'низкий'}
+=======
+            <div className="flex items-center gap-2 mb-3">
+              <Icon name="bulb" className="w-4 h-4 text-sky-600" />
+              <h2 className="font-bold text-stone-900">Рекомендации</h2>
+            </div>
+            <div className="space-y-2">
+              {m.recommendations.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-start gap-3 border-l-4 border-l-sky-500 bg-sky-50 rounded-lg px-4 py-3"
+                >
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-stone-900">
+                    {r.action}
+                  </p>
+                  <p className="text-xs text-stone-600 mt-0.5">{r.reason}</p>
+                </div>
+                <Badge
+                  color={
+                    r.priority === 'high'
+                      ? 'red'
+                      : r.priority === 'medium'
+                        ? 'amber'
+                        : 'stone'
+                  }
+                >
+                  {r.priority === 'high'
+                    ? 'высокий'
+                    : r.priority === 'medium'
+                      ? 'средний'
+                      : 'низкий'}
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                 </Badge>
               </div>
             ))}
@@ -444,11 +905,41 @@ export default function EmployeeDetail({
   )
 }
 
+<<<<<<< HEAD
 function Metric({ label, value, sub, alert }: { label: string; value: string | number; sub: string; alert?: boolean }) {
   return (
     <div className={`rounded-xl p-4 border ${alert ? 'bg-red-50 border-red-200' : 'bg-white border-stone-200'}`}>
       <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">{label}</p>
       <p className={`text-2xl font-bold ${alert ? 'text-red-700' : 'text-stone-900'}`}>{value}</p>
+=======
+function Metric({
+  label,
+  value,
+  sub,
+  alert,
+}: {
+  label: string
+  value: string | number
+  sub: string
+  alert?: boolean
+}) {
+  return (
+    <div
+      className={`rounded-xl p-4 border ${
+        alert ? 'bg-red-50 border-red-200' : 'bg-white border-stone-200'
+      }`}
+    >
+      <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">
+        {label}
+      </p>
+      <p
+        className={`text-2xl font-bold ${
+          alert ? 'text-red-700' : 'text-stone-900'
+        }`}
+      >
+        {value}
+      </p>
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
       <p className="text-xs text-stone-500 mt-0.5">{sub}</p>
     </div>
   )

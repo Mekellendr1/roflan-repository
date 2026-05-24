@@ -19,7 +19,10 @@ from sqlalchemy.orm import Session
 from app.api import ai as ai_routes
 from app.api import auth as auth_routes
 from app.api import projects as project_routes
+<<<<<<< HEAD
 from app.api import profile as profile_routes
+=======
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 from app.core.config import settings
 from app.core.database import Base, engine, get_db
 from app.models import Employee, Source
@@ -59,7 +62,10 @@ app.include_router(ai_routes.router)
 # Auth + Projects
 app.include_router(auth_routes.router)
 app.include_router(project_routes.router)
+<<<<<<< HEAD
 app.include_router(profile_routes.router)
+=======
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 
 
 @app.get("/", tags=["root"])
@@ -75,8 +81,12 @@ def health():
 # ===== EMPLOYEES =====
 @app.get("/employees", tags=["employees"])
 def list_employees(
+<<<<<<< HEAD
     team: str | None = Query(None),
     db: Session = Depends(get_db),
+=======
+    team: str | None = Query(None), db: Session = Depends(get_db)
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 ):
     emps = db.query(Employee).all()
     result = [employee_to_dict(e) for e in emps]
@@ -185,6 +195,7 @@ def get_stats(
     team: str = Query("Все команды"), db: Session = Depends(get_db)
 ):
     return dashboard_stats(db, team)
+<<<<<<< HEAD
 
 
 # ===== EMPLOYEE MUTATIONS (обновление профиля конкретного сотрудника) =====
@@ -281,3 +292,5 @@ def remove_employee_exception(
         raise HTTPException(status_code=404)
     db.delete(exc)
     db.commit()
+=======
+>>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
