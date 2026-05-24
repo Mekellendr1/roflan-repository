@@ -1,26 +1,18 @@
 import { useState } from 'react'
 import { COMPUTED } from '../lib/derived'
 import { teamAvailability } from '../lib/metrics'
-<<<<<<< HEAD
 import { WEEKDAYS } from '../lib/mockData'
-=======
-import { TEAMS, WEEKDAYS } from '../lib/mockData'
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 import Icon from '../components/Icon'
 import TopBar from '../components/TopBar'
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8) // 8..20
 
 export default function AvailabilityMap() {
-<<<<<<< HEAD
   const teams = ['Все команды', ...new Set(COMPUTED.map((e) => e.team))]
   const [team, setTeam] = useState(() => {
     const t = new Set(COMPUTED.map((e) => e.team))
     return t.size > 0 ? [...t][0] : 'Все команды'
   })
-=======
-  const [team, setTeam] = useState('Backend')
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
   const [day, setDay] = useState(2) // среда
 
   const list =
@@ -63,11 +55,7 @@ export default function AvailabilityMap() {
           onChange={(e) => setTeam(e.target.value)}
           className="px-3 py-2 text-sm border border-stone-200 rounded-lg bg-white"
         >
-<<<<<<< HEAD
           {teams.map((t) => (
-=======
-          {TEAMS.map((t) => (
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
             <option key={t}>{t}</option>
           ))}
         </select>

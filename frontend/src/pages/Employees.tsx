@@ -1,14 +1,9 @@
 import { useMemo, useState } from 'react'
 import { COMPUTED } from '../lib/derived'
-<<<<<<< HEAD
-=======
-import { TEAMS } from '../lib/mockData'
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 import { avatarColor, riskColor } from '../lib/utils'
 import { Avatar, Badge } from '../components/Primitives'
 import TopBar from '../components/TopBar'
 
-<<<<<<< HEAD
 export default function Employees({ setRoute, currentRole }: {
   setRoute: (r: string) => void
   currentRole?: import('../lib/authTypes').ProjectRole | null
@@ -22,44 +17,24 @@ export default function Employees({ setRoute, currentRole }: {
   const list = useMemo(() => {
     const src = [...COMPUTED]
     let l = team === 'Все команды' ? src : src.filter((e) => e.team === team)
-=======
-export default function Employees({ setRoute }: { setRoute: (r: string) => void }) {
-  const [team, setTeam] = useState('Все команды')
-  const [sort, setSort] = useState<'risk' | 'actuality' | 'name'>('risk')
-
-  const list = useMemo(() => {
-    let l = team === 'Все команды' ? [...COMPUTED] : COMPUTED.filter((e) => e.team === team)
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
     if (sort === 'risk') l.sort((a, b) => b.metrics.integralRisk - a.metrics.integralRisk)
     if (sort === 'actuality') l.sort((a, b) => a.metrics.actuality - b.metrics.actuality)
     if (sort === 'name') l.sort((a, b) => a.name.localeCompare(b.name))
     return l
   }, [team, sort])
 
-<<<<<<< HEAD
   const canViewProfile = currentRole !== undefined // все могут смотреть
   const subtitle = `${list.length} сотрудников${currentRole === 'Сотрудник' ? ' · только просмотр' : ''}`
 
   return (
     <div className="fade-in">
       <TopBar title="Профили сотрудников" subtitle={subtitle}>
-=======
-  return (
-    <div className="fade-in">
-      <TopBar title="Профили сотрудников" subtitle={`${list.length} сотрудников`}>
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
         <select
           value={team}
           onChange={(e) => setTeam(e.target.value)}
           className="px-3 py-2 text-sm border border-stone-200 rounded-lg bg-white"
         >
-<<<<<<< HEAD
           {['Все команды', ...new Set(COMPUTED.map((e) => e.team))].map((t) => <option key={t}>{t}</option>)}
-=======
-          {TEAMS.map((t) => (
-            <option key={t}>{t}</option>
-          ))}
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
         </select>
         <select
           value={sort}
@@ -74,15 +49,12 @@ export default function Employees({ setRoute }: { setRoute: (r: string) => void 
 
       <div className="p-8">
         <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
-<<<<<<< HEAD
           {list.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-stone-400">
               <p className="text-lg font-semibold mb-1">Нет сотрудников</p>
               <p className="text-sm">В этом проекте пока нет данных о сотрудниках</p>
             </div>
           ) : (
-=======
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
           <table className="w-full">
             <thead>
               <tr className="text-[11px] uppercase tracking-wider text-stone-500 border-b border-stone-200 bg-stone-50">
@@ -106,15 +78,7 @@ export default function Employees({ setRoute }: { setRoute: (r: string) => void 
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-<<<<<<< HEAD
                         <Avatar initials={e.initials} color={avatarColor(m.riskLevel)} size="sm" />
-=======
-                        <Avatar
-                          initials={e.initials}
-                          color={avatarColor(m.riskLevel)}
-                          size="sm"
-                        />
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                         <div>
                           <p className="font-semibold text-stone-900 text-sm">{e.name}</p>
                           <p className="text-xs text-stone-500">{e.role} · {e.team}</p>
@@ -128,68 +92,24 @@ export default function Employees({ setRoute }: { setRoute: (r: string) => void 
                       </p>
                     </td>
                     <td className="px-4 py-3 text-right">
-<<<<<<< HEAD
                       <span className={`font-mono text-sm font-semibold ${m.actuality < 0.6 ? 'text-red-600' : 'text-stone-700'}`}>
-=======
-                      <span
-                        className={`font-mono text-sm font-semibold ${
-                          m.actuality < 0.6 ? 'text-red-600' : 'text-stone-700'
-                        }`}
-                      >
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                         {Math.round(m.actuality * 100)}%
                       </span>
                       <p className="text-[10px] text-stone-400">{m.daysSinceUpdate} дн.</p>
                     </td>
                     <td className="px-4 py-3 text-right">
-<<<<<<< HEAD
                       <span className={`font-mono text-sm ${m.workload > 1 ? 'text-red-600' : m.workload > 0.8 ? 'text-amber-600' : 'text-stone-600'}`}>
-=======
-                      <span
-                        className={`font-mono text-sm ${
-                          m.workload > 1
-                            ? 'text-red-600'
-                            : m.workload > 0.8
-                              ? 'text-amber-600'
-                              : 'text-stone-600'
-                        }`}
-                      >
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                         {Math.round(m.workload * 100)}%
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-<<<<<<< HEAD
                       <span className={`font-mono text-sm ${m.conflictCount > 2 ? 'text-red-600' : m.conflictCount > 0 ? 'text-amber-600' : 'text-stone-400'}`}>
-=======
-                      <span
-                        className={`font-mono text-sm ${
-                          m.conflictCount > 2
-                            ? 'text-red-600'
-                            : m.conflictCount > 0
-                              ? 'text-amber-600'
-                              : 'text-stone-400'
-                        }`}
-                      >
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                         {m.conflictCount || '—'}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-<<<<<<< HEAD
                         <Badge color={m.riskLevel === 'critical' || m.riskLevel === 'high' ? 'red' : m.riskLevel === 'medium' ? 'amber' : 'green'}>
-=======
-                        <Badge
-                          color={
-                            m.riskLevel === 'critical' || m.riskLevel === 'high'
-                              ? 'red'
-                              : m.riskLevel === 'medium'
-                                ? 'amber'
-                                : 'green'
-                          }
-                        >
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
                           {rc.label}
                         </Badge>
                         <span className={`font-mono text-base font-bold ${rc.text}`}>
@@ -202,10 +122,7 @@ export default function Employees({ setRoute }: { setRoute: (r: string) => void 
               })}
             </tbody>
           </table>
-<<<<<<< HEAD
           )}
-=======
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
         </div>
       </div>
     </div>

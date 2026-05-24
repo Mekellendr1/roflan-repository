@@ -114,7 +114,6 @@ export async function apiRemoveMember(
 ): Promise<void> {
   await http.delete(`/projects/${projectId}/members/${memberId}`, authHeader(token))
 }
-<<<<<<< HEAD
 
 // ─── Profile ─────────────────────────────────────────────────────────────────
 
@@ -148,5 +147,3 @@ export async function apiUpdateMyProfile(token: string, data: Partial<ProfileSet
   })
   return res.data
 }
-=======
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5

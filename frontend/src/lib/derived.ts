@@ -94,7 +94,6 @@ export function getEmployee(id: string): EmployeeComputed | undefined {
   return emps().find((e) => e.id === id)
 }
 
-<<<<<<< HEAD
 /** Найти Employee текущего пользователя по его userId */
 export function getMyEmployee(userId: string): EmployeeComputed | undefined {
   return emps().find((e) => e.userId === userId)
@@ -105,8 +104,6 @@ export function myNotifications(empId: string): import('./types').Notification[]
   return smartNotifications().filter((n) => n.empId === empId)
 }
 
-=======
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 export function diagnosticGroups(
   list?: EmployeeComputed[]
 ): DiagnosticGroup[] {

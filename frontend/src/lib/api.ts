@@ -12,7 +12,6 @@ http.interceptors.response.use(
 )
 
 // ===== Запросы (все возвращают то же, что считал derived.ts) =====
-<<<<<<< HEAD
 export const apiGetEmployees = (team?: string, projectId?: string) =>
   http.get('/employees', {
     params: {
@@ -20,10 +19,6 @@ export const apiGetEmployees = (team?: string, projectId?: string) =>
       ...(projectId ? { project_id: projectId } : {}),
     },
   }).then((r) => r.data)
-=======
-export const apiGetEmployees = (team?: string) =>
-  http.get('/employees', { params: team ? { team } : {} }).then((r) => r.data)
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
 
 export const apiGetEmployee = (id: string) =>
   http.get(`/employees/${id}`).then((r) => r.data)

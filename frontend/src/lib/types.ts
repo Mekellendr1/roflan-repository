@@ -56,10 +56,7 @@ export interface HistoryEntry {
 export interface Employee {
   // ei
   id: string
-<<<<<<< HEAD
   userId?: string  // ссылка на системный аккаунт
-=======
->>>>>>> 8e5bb852d38b0f7212fa95f26d258b51fbad0db5
   name: string
   initials: string
   role: string
