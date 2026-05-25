@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react'
-import { COMPUTED } from '../lib/derived'
+import { COMPUTED, hydrateFromList } from '../lib/derived'
 import { WEEKDAYS } from '../lib/mockData'
+import { computeAll } from '../lib/metrics'
 import type { MeetingSlot } from '../lib/types'
 import { Avatar, Badge } from '../components/Primitives'
 import { avatarColor } from '../lib/utils'
 import Icon from '../components/Icon'
 import TopBar from '../components/TopBar'
+import { apiCreateMeeting, http } from '../lib/api'
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 8) // 8..19
 
-// Подбор лучших окон: перебираем дни и часы, считаем сколько участников
-// свободны (в рабочем окне и без событий), ранжируем.
 function findSlots(empIds: string[], duration: number): MeetingSlot[] {
   const emps = COMPUTED.filter((e) => empIds.includes(e.id))
   if (emps.length < 2) return []
@@ -32,7 +32,6 @@ function findSlots(empIds: string[], duration: number): MeetingSlot[] {
         )
         if (inSchedule && !busy) {
           available++
-          // комфорт: близость к середине дня
           const mid = (e.schedule.startHour + e.schedule.endHour) / 2
           if (Math.abs(start - mid) > 4)
             warnings.push(`неудобно для ${e.name.split(' ')[0]} (${e.tzShort})`)
@@ -72,10 +71,31 @@ function findSlots(empIds: string[], duration: number): MeetingSlot[] {
   return uniq.slice(0, 4)
 }
 
+async function reloadCache() {
+  const token = localStorage.getItem('wt_token')
+  const lastProject = localStorage.getItem('wt_last_project')
+  if (!token || !lastProject) return
+  try {
+    const res = await http.get(`/projects/${lastProject}/employees`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const data: any[] = Array.isArray(res.data) ? res.data : []
+    const filled = data
+      .filter((e) => e.profile_filled !== false)
+      .map(({ metrics: _m, profile_filled: _pf, ...rest }: any) => rest)
+    hydrateFromList(computeAll(filled))
+  } catch (err) {
+    console.error('cache reload failed', err)
+  }
+}
+
 export default function MeetingFinder() {
   const [selected, setSelected] = useState<string[]>(['e1', 'e4', 'e6', 'e7'])
   const [duration, setDuration] = useState(1)
   const [results, setResults] = useState<MeetingSlot[] | null>(null)
+  const [createdIdx, setCreatedIdx] = useState<number | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [tick, setTick] = useState(0)
 
   const selEmps = COMPUTED.filter((e) => selected.includes(e.id))
   const toggle = (id: string) =>
@@ -83,8 +103,36 @@ export default function MeetingFinder() {
 
   const slots = useMemo(
     () => (results ? results : null),
-    [results]
+    [results, tick]
   )
+
+  const [createDialog, setCreateDialog] = useState<{
+    slot: MeetingSlot
+    index: number
+    title: string
+  } | null>(null)
+
+  async function handleCreate() {
+    if (!createDialog) return
+    const { slot, index, title } = createDialog
+    if (!title.trim()) return
+    setSaving(true)
+    const dayIndex = WEEKDAYS.indexOf(slot.day)
+    const parts = slot.time.split('–')
+    const startHour = parseInt(parts[0])
+    const endHour = parseInt(parts[1])
+    try {
+      await apiCreateMeeting(selected, dayIndex, startHour, endHour, title.trim())
+      setCreatedIdx(index)
+      setCreateDialog(null)
+      await reloadCache()
+      setTick((t) => t + 1)
+    } catch (err) {
+      console.error('Failed to create meeting', err)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="fade-in">
@@ -92,6 +140,51 @@ export default function MeetingFinder() {
         title="Подбор времени для встречи"
         subtitle="Учитывает рабочие окна, часовые пояса, занятость и перегрузку"
       />
+
+      {createDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 className="text-lg font-bold text-stone-900 mb-1">Новая встреча</h3>
+            <p className="text-sm text-stone-500 mb-4">
+              {createDialog.slot.day} · {createDialog.slot.time} · {selEmps.length} участников
+            </p>
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {selEmps.map((e) => (
+                <span key={e.id} className="text-xs bg-stone-100 text-stone-700 px-2 py-1 rounded-md">
+                  {e.name.split(' ')[0]}
+                </span>
+              ))}
+            </div>
+            <label className="text-sm font-medium text-stone-700 mb-1 block">Название встречи</label>
+            <input
+              autoFocus
+              value={createDialog.title}
+              onChange={(e) => setCreateDialog({ ...createDialog, title: e.target.value })}
+              onKeyDown={(ev) => { if (ev.key === 'Enter') handleCreate(); if (ev.key === 'Escape') setCreateDialog(null) }}
+              placeholder="Синхронизация"
+              className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm mb-5 outline-none focus:border-stone-400 transition-colors"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setCreateDialog(null)}
+                disabled={saving}
+                className="px-4 py-2 text-sm font-medium text-stone-600 border border-stone-200 rounded-lg hover:bg-stone-50 cursor-pointer disabled:opacity-50"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={saving || !createDialog.title.trim()}
+                className="px-4 py-2 text-sm font-semibold bg-stone-900 text-white rounded-lg hover:bg-stone-800 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                {saving && <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" /></svg>}
+                {saving ? 'Создание...' : 'Создать'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="p-8">
         <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
           <p className="text-sm font-semibold text-stone-700 mb-2">
@@ -135,7 +228,7 @@ export default function MeetingFinder() {
             <button
               onClick={() => setResults(findSlots(selected, duration))}
                 disabled={selected.length < 2}
-                className="px-5 py-2.5 bg-sky-500 text-white rounded-lg font-semibold hover:bg-sky-400 flex items-center gap-2 disabled:opacity-50"
+                className="px-5 py-2.5 bg-sky-500 text-white rounded-lg font-semibold hover:bg-sky-400 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               <Icon name="search" className="w-4 h-4" />
               Найти оптимальное время
@@ -186,8 +279,16 @@ export default function MeetingFinder() {
                   <p className="text-sm text-stone-600 mb-2">
                     Доступно {s.availableCount} из {s.totalCount} · {s.reason}
                   </p>
-                  <button className="px-4 py-1.5 rounded-lg text-sm font-semibold bg-stone-900 text-white hover:bg-stone-800">
-                    Создать встречу
+                  <button
+                    onClick={() => setCreateDialog({ slot: s, index: i, title: '' })}
+                    disabled={createdIdx === i}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold cursor-pointer ${
+                      createdIdx === i
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-stone-900 text-white hover:bg-stone-800'
+                    }`}
+                  >
+                    {createdIdx === i ? '✓ Создана' : 'Создать встречу'}
                   </button>
                 </div>
               ))}

@@ -3,6 +3,7 @@
  * App.tsx наполняет кэш через hydrate() после загрузки с сервера.
  * Если бэк недоступен — локальный расчёт (derived_local), чтобы демо не падало.
  */
+import { useSyncExternalStore } from 'react'
 import type {
   Conflict,
   DiagnosticGroup,
@@ -32,6 +33,26 @@ const cache: Cache = {
   ready: false,
 }
 
+let _cacheVersion = 0
+const _listeners = new Set<() => void>()
+
+function _notify() {
+  _cacheVersion++
+  for (const fn of _listeners) fn()
+}
+
+/** React hook — возвращает версию кеша, перерендеривает при изменении. */
+export function useCacheVersion(): number {
+  return useSyncExternalStore(
+    (cb) => {
+      _listeners.add(cb)
+      return () => _listeners.delete(cb)
+    },
+    () => _cacheVersion,
+    () => _cacheVersion,
+  )
+}
+
 /** Вызывается из App.tsx после загрузки данных с бэка. */
 export function hydrate(data: {
   employees: EmployeeComputed[]
@@ -48,6 +69,7 @@ export function hydrate(data: {
   cache.notifications = data.notifications
   cache.roadmap = data.roadmap
   cache.ready = true
+  _notify()
 }
 
 /**
@@ -63,6 +85,7 @@ export function hydrateFromList(list: EmployeeComputed[]) {
   cache.notifications = local.smartNotifications(list)
   cache.roadmap = local.actualizationRoadmap(list)
   cache.ready = true
+  _notify()
 }
 
 function emps(): EmployeeComputed[] {

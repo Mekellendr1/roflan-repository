@@ -41,6 +41,7 @@ const GROUPS: {
       { id: 'map', label: 'Карта', icon: 'map' },
       { id: 'meeting', label: 'Время встреч', icon: 'meeting' },
       { id: 'conflicts', label: 'Конфликты', icon: 'conflicts' },
+      { id: 'events', label: 'События', icon: 'calendar' },
     ],
   },
   {
@@ -50,10 +51,6 @@ const GROUPS: {
       { id: 'roadmap', label: 'Карта', icon: 'road' },
       { id: 'notifications', label: 'Уведомления', icon: 'bell' },
     ],
-  },
-  {
-    label: 'Данные',
-    items: [{ id: 'sources', label: 'Источники', icon: 'sources' }],
   },
   {
     label: 'Управление',
@@ -225,13 +222,15 @@ export default function Sidebar({
       {/* Navigation */}
       {!compact ? (
         <nav className="p-3 flex-1 overflow-y-auto">
-          {GROUPS.map((g) => (
+          {GROUPS.map((g) => {
+            const visible = g.items.filter((item) => allowedRoutes.has(item.id))
+            if (visible.length === 0) return null
+            return (
             <div key={g.label} className="mb-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-1.5">
                 {g.label}
               </p>
-              {g.items.map((item) => {
-                if (!allowedRoutes.has(item.id)) return null
+              {visible.map((item) => {
                 const active =
                   route === item.id ||
                   (item.id === 'employees' && route.startsWith('emp/')) ||
@@ -253,7 +252,8 @@ export default function Sidebar({
                 )
               })}
             </div>
-          ))}
+          )
+        })}
         </nav>
       ) : (
         <nav className="p-3 flex-1">

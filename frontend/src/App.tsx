@@ -14,6 +14,7 @@ import Recommendations from './pages/Recommendations'
 import Roadmap from './pages/Roadmap'
 import Notifications from './pages/Notifications'
 import Sources from './pages/Sources'
+import EventsPage from './pages/Events'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDetail from './pages/ProjectDetail'
 import AuthPage from './pages/AuthPage'
@@ -200,13 +201,14 @@ function AppShell() {
       case 'analytics':        return <Analytics />
       case 'employees':        return <Employees setRoute={updateRoute} currentRole={activeProjectRole} />
       case 'diagnostics':      return <Diagnostics setRoute={updateRoute} />
-      case 'map':              return <AvailabilityMap />
+      case 'map':              return <AvailabilityMap setRoute={updateRoute} />
       case 'meeting':          return <MeetingFinder />
       case 'conflicts':        return <Conflicts setRoute={updateRoute} />
       case 'recommendations':  return <Recommendations setRoute={updateRoute} />
       case 'roadmap':          return <Roadmap setRoute={updateRoute} />
       case 'notifications':    return <Notifications setRoute={updateRoute} currentRole={activeProjectRole} />
       case 'sources':          return <Sources />
+      case 'events':           return <EventsPage setRoute={updateRoute} currentRole={activeProjectRole} />
       case 'my-profile':       return <MyProfile onBack={goBack} />
       case 'projects':         return <ProjectsPage setRoute={updateRoute} />
       default:                 return <Dashboard setRoute={updateRoute} />

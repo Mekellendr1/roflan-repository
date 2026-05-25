@@ -39,6 +39,7 @@ const ICONS: Record<string, JSX.Element> = {
   download: <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />,
   warning: <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />,
   formula: <path d="M5 4v3h5.5v12h3V7H19V4H5z" />,
+  chevron: <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />,
 }
 
 export default function Icon({ name, className = 'w-4 h-4' }: IconProps) {

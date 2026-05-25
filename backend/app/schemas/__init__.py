@@ -1,3 +1,3 @@
-from app.schemas.schemas import MeetingRequest
+from app.schemas.schemas import CreateMeetingRequest, MeetingRequest
 
-__all__ = ["MeetingRequest"]
+__all__ = ["CreateMeetingRequest", "MeetingRequest"]

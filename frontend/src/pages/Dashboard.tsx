@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { COMPUTED, dashboardStats, diagnosticGroups, getMyEmployee } from '../lib/derived'
+import { COMPUTED, dashboardStats, diagnosticGroups, getMyEmployee, useCacheVersion } from '../lib/derived'
 import { useAuth } from '../lib/authContext'
 import { avatarColor, riskColor } from '../lib/utils'
 import { Avatar, Badge, RiskGauge } from '../components/Primitives'
@@ -8,6 +8,21 @@ import TopBar, { GhostButton } from '../components/TopBar'
 import type { ProjectRole } from '../lib/authTypes'
 
 const WEEKDAY = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+
+function fmtHour(h: number) {
+  const hh = Math.floor(h)
+  const mm = Math.round((h - hh) * 60)
+  return `${hh}:${mm.toString().padStart(2, '0')}`
+}
+
+function decl(n: number, forms: [string, string, string]) {
+  const n100 = Math.abs(n) % 100
+  const n10 = n100 % 10
+  if (n100 > 10 && n100 < 20) return forms[2]
+  if (n10 > 1 && n10 < 5) return forms[1]
+  if (n10 === 1) return forms[0]
+  return forms[2]
+}
 
 export default function Dashboard({
   setRoute,
@@ -29,6 +44,7 @@ export default function Dashboard({
 // ─── Личный дашборд Сотрудника ───────────────────────────────────────────────
 
 function EmployeeDashboard({ emp, setRoute }: { emp: any; setRoute: (r: string) => void }) {
+  useCacheVersion()
   if (!emp) {
     return (
       <div className="fade-in">
@@ -139,12 +155,18 @@ function EmployeeDashboard({ emp, setRoute }: { emp: any; setRoute: (r: string) 
 
         {/* Мои события */}
         <div className="bg-white border border-stone-200 rounded-xl p-6">
-          <h2 className="font-bold text-stone-900 mb-4">События на неделе ({emp.events.length})</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-stone-900">Мои события ({emp.events.length})</h2>
+            <button onClick={() => setRoute('events')}
+              className="text-xs text-blue-700 font-medium hover:text-blue-800 flex items-center gap-1 cursor-pointer">
+              Все события <Icon name="chevron" className="w-3.5 h-3.5" />
+            </button>
+          </div>
           {emp.events.length === 0 ? (
             <p className="text-sm text-stone-500">Нет зафиксированных событий</p>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              {emp.events.slice(0, 8).map((ev: any) => {
+              {emp.events.map((ev: any) => {
                 const inSch = emp.schedule.days.includes(ev.day)
                   && ev.startHour >= emp.schedule.startHour
                   && ev.endHour <= emp.schedule.endHour
@@ -154,7 +176,7 @@ function EmployeeDashboard({ emp, setRoute }: { emp: any; setRoute: (r: string) 
                   }`}>
                     <span className="text-xs text-stone-400 w-6 flex-shrink-0">{WEEKDAY[ev.day]}</span>
                     <span className="flex-1 truncate text-stone-800">{ev.title}</span>
-                    <span className="text-xs text-stone-400 flex-shrink-0">{ev.startHour}:00</span>
+                        <span className="text-xs text-stone-400 flex-shrink-0">{fmtHour(ev.startHour)}</span>
                     {!inSch && ev.type !== 'focus' && (
                       <Badge color="red">вне графика</Badge>
                     )}
@@ -195,12 +217,20 @@ function EmployeeDashboard({ emp, setRoute }: { emp: any; setRoute: (r: string) 
 // ─── Командный дашборд для всех остальных ролей ──────────────────────────────
 
 function TeamDashboard({ setRoute, currentRole }: { setRoute: (r: string) => void; currentRole?: ProjectRole | null }) {
+  useCacheVersion()
   const teams = ['Все команды', ...new Set(COMPUTED.map((e) => e.team))]
   const [team, setTeam] = useState('Все команды')
   const list = team === 'Все команды' ? COMPUTED : COMPUTED.filter((e) => e.team === team)
+
   const s = dashboardStats(list)
   const groups = diagnosticGroups(list)
   const topRisk = [...list].sort((a, b) => b.metrics.integralRisk - a.metrics.integralRisk).slice(0, 6)
+
+  // События команды — сводка
+  const totalEvents = list.reduce((sum, e) => sum + e.events.length, 0)
+  const recentEvents = list.flatMap((e) =>
+    e.events.map((ev) => ({ ...ev, empName: e.name, empId: e.id }))
+  ).sort((a, b) => a.day - b.day || a.startHour - a.startHour).slice(0, 6)
 
   const roleLabel: Record<string, string> = {
     'Руководитель': 'Обзор команды',
@@ -214,7 +244,7 @@ function TeamDashboard({ setRoute, currentRole }: { setRoute: (r: string) => voi
     <div className="fade-in">
       <TopBar
         title={roleLabel[currentRole ?? ''] ?? 'Обзор'}
-        subtitle={`${s.total} сотрудников · обновлено только что`}
+        subtitle={`${s.total} ${decl(s.total, ['сотрудник', 'сотрудника', 'сотрудников'])} · обновлено только что`}
       >
         <select
           value={team}
@@ -292,6 +322,36 @@ function TeamDashboard({ setRoute, currentRole }: { setRoute: (r: string) => voi
                     </button>
                   )
                 })}
+              </div>
+            </section>
+          )}
+
+          {/* События команды */}
+          {list.length > 0 && totalEvents > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">События команды ({totalEvents})</h2>
+                <button onClick={() => setRoute('events')}
+                  className="text-sm text-blue-700 font-medium hover:text-blue-800 flex items-center gap-1.5 cursor-pointer">
+                  Все события
+                  <Icon name="chevron" className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="bg-white border border-stone-200 rounded-xl p-5">
+                {recentEvents.length === 0 ? (
+                  <p className="text-sm text-stone-500">Нет событий</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {recentEvents.map((ev) => (
+                      <div key={ev.id} className="flex items-center gap-3 rounded-lg px-3 py-2 border border-stone-200 bg-stone-50 text-sm">
+                        <span className="text-xs text-stone-400 w-6 flex-shrink-0">{WEEKDAY[ev.day]}</span>
+                        <span className="flex-1 truncate text-stone-800">{ev.title}</span>
+                    <span className="text-xs text-stone-400 flex-shrink-0">{fmtHour(ev.startHour)}</span>
+                        <span className="text-xs text-stone-500 truncate max-w-24">{ev.empName.split(' ')[0]}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </section>
           )}

@@ -98,7 +98,8 @@ class Event(Base):
     start_hour: Mapped[float] = mapped_column(Float, nullable=False)
     end_hour: Mapped[float] = mapped_column(Float, nullable=False)
     event_type: Mapped[str] = mapped_column(String, default="meeting")
-    source: Mapped[str] = mapped_column(String, default="Google Calendar")
+    source: Mapped[str] = mapped_column(String, default="WorkTime Sync")
+    created_at: Mapped[str] = mapped_column(String, default=lambda: datetime.now(timezone.utc).isoformat())
 
     employee = relationship("Employee", back_populates="events")
 

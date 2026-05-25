@@ -3,6 +3,14 @@ import axios from 'axios'
 // baseURL '/api' — Vite proxy перенаправит на http://localhost:8000
 export const http = axios.create({ baseURL: '/api', timeout: 10000 })
 
+http.interceptors.request.use((config) => {
+  const token = localStorage.getItem('wt_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 http.interceptors.response.use(
   (r) => r,
   (e) => {
@@ -52,3 +60,39 @@ export const apiGetStats = (team?: string) =>
 
 export const apiRecalculate = () =>
   http.post('/recalculate').then((r) => r.data)
+
+export const apiCreateMeeting = (
+  employee_ids: string[],
+  day: number,
+  start_hour: number,
+  end_hour: number,
+  title: string
+) =>
+  http
+    .post('/meetings/create', { employee_ids, day, start_hour, end_hour, title })
+    .then((r) => r.data)
+
+// ===== Events CRUD =====
+export const apiGetEvents = (employee_id?: string) =>
+  http.get('/events', { params: { employee_id } }).then((r) => r.data)
+
+export const apiCreateEvent = (data: {
+  employee_ids: string[]
+  title: string
+  day: number
+  start_hour: number
+  end_hour: number
+  event_type?: string
+  source?: string
+}) => http.post('/events', data).then((r) => r.data)
+
+export const apiUpdateEvent = (event_id: string, data: {
+  title?: string
+  day?: number
+  start_hour?: number
+  end_hour?: number
+  event_type?: string
+}) => http.put(`/events/${event_id}`, data).then((r) => r.data)
+
+export const apiDeleteEvent = (event_id: string) =>
+  http.delete(`/events/${event_id}`).then((r) => r.data)

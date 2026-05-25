@@ -209,6 +209,7 @@ def employee_to_dict(emp: Employee) -> dict:
                 "endHour": e.end_hour,
                 "type": e.event_type,
                 "source": e.source,
+                "createdAt": e.created_at,
             }
             for e in emp.events
         ],

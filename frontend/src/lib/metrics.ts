@@ -244,7 +244,7 @@ export function teamAvailability(
   employees: EmployeeComputed[],
   day: number
 ): { hour: number; freeCount: number; total: number }[] {
-  const hours = Array.from({ length: 13 }, (_, i) => i + 8) // 8..20
+  const hours = Array.from({ length: 24 }, (_, i) => i + 1) // 1..24
   return hours.map((h) => {
     let free = 0
     for (const emp of employees) {

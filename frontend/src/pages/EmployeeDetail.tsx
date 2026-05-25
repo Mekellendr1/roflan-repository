@@ -410,7 +410,7 @@ export default function EmployeeDetail({
                   <div key={ev.id} className={`flex items-center gap-3 rounded-lg px-3 py-2 border ${!inSchedule && ev.type !== 'focus' ? 'bg-red-50 border-red-200' : 'bg-stone-50 border-stone-200'}`}>
                     <span className="text-xs text-stone-400 w-6">{WEEKDAYS[ev.day]}</span>
                     <span className="text-sm text-stone-800 flex-1 truncate">{ev.title}</span>
-                    <span className="text-xs text-stone-500">{ev.startHour}:00–{ev.endHour}:00</span>
+                    <span className="text-xs text-stone-500">{Math.floor(ev.startHour)}:{String(Math.round((ev.startHour % 1) * 60)).padStart(2, '0')}–{Math.floor(ev.endHour)}:{String(Math.round((ev.endHour % 1) * 60)).padStart(2, '0')}</span>
                     {!inSchedule && ev.type !== 'focus' && <Badge color="red">вне графика</Badge>}
                   </div>
                 )

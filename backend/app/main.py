@@ -22,8 +22,8 @@ from app.api import projects as project_routes
 from app.api import profile as profile_routes
 from app.core.config import settings
 from app.core.database import Base, engine, get_db
-from app.models import Employee, Source
-from app.schemas import MeetingRequest
+from app.models import Employee, Event, Source
+from app.schemas import CreateMeetingRequest, MeetingRequest
 from app.services.derived import (
     actualization_roadmap,
     all_conflicts,
@@ -161,6 +161,40 @@ def suggest_time(req: MeetingRequest, db: Session = Depends(get_db)):
     return find_meeting_slots(db, req.employee_ids, req.duration)
 
 
+@app.post("/meetings/create", tags=["availability"])
+def create_meeting(req: CreateMeetingRequest, db: Session = Depends(get_db)):
+    """Создаёт событие-встречу для каждого участника."""
+    import uuid as _uuid
+    created = []
+    for emp_id in req.employee_ids:
+        emp = db.query(Employee).filter(Employee.id == emp_id).first()
+        if not emp:
+            continue
+        from datetime import datetime, timezone as _tz
+        ev = Event(
+            id=str(_uuid.uuid4()),
+            employee_id=emp_id,
+            title=req.title,
+            day=req.day,
+            start_hour=req.start_hour,
+            end_hour=req.end_hour,
+            event_type="meeting",
+            source="WorkTime Sync",
+            created_at=datetime.now(_tz.utc).isoformat(),
+        )
+        db.add(ev)
+        created.append({
+            "employee_id": emp_id,
+            "event_id": ev.id,
+            "title": req.title,
+            "day": req.day,
+            "start_hour": req.start_hour,
+            "end_hour": req.end_hour,
+        })
+    db.commit()
+    return {"ok": True, "created": len(created), "events": created}
+
+
 # ===== SOURCES =====
 @app.get("/sources", tags=["sources"])
 def get_sources(db: Session = Depends(get_db)):
@@ -204,6 +238,132 @@ class _FormatUpdate(_BM):
 class _ExceptionCreate(_BM):
     type: str
     note: str = ""
+
+# ===== EVENTS CRUD =====
+
+from app.models import ProjectMember as _PM
+
+def _can_manage_events(user, db) -> bool:
+    memberships = db.query(_PM).filter(_PM.user_id == user.id).all()
+    return any(m.role != "Сотрудник" for m in memberships)
+
+
+class _EventCreate(_BM):
+    employee_ids: list[str]
+    title: str
+    day: int
+    start_hour: float
+    end_hour: float
+    event_type: str = "meeting"
+    source: str = "WorkTime Sync"
+
+
+class _EventUpdate(_BM):
+    title: str | None = None
+    day: int | None = None
+    start_hour: float | None = None
+    end_hour: float | None = None
+    event_type: str | None = None
+
+
+def _event_dict(ev: Event) -> dict:
+    return {
+        "id": ev.id,
+        "employee_id": ev.employee_id,
+        "title": ev.title,
+        "day": ev.day,
+        "start_hour": ev.start_hour,
+        "end_hour": ev.end_hour,
+        "event_type": ev.event_type,
+        "source": ev.source,
+        "created_at": ev.created_at,
+    }
+
+
+@app.get("/events", tags=["events"])
+def list_events(
+    employee_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    q = db.query(Event)
+    if employee_id:
+        q = q.filter(Event.employee_id == employee_id)
+    evs = q.order_by(Event.day, Event.start_hour).all()
+    return [_event_dict(ev) for ev in evs]
+
+
+@app.post("/events", tags=["events"])
+def create_event(
+    body: _EventCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(_gcu),
+):
+    if not _can_manage_events(current_user, db):
+        raise HTTPException(status_code=403, detail="Недостаточно прав для создания событий")
+    import uuid as _uuid
+    from datetime import datetime, timezone as _tz
+    created = []
+    for emp_id in body.employee_ids:
+        emp = db.query(Employee).filter(Employee.id == emp_id).first()
+        if not emp:
+            continue
+        ev = Event(
+            id=str(_uuid.uuid4()),
+            employee_id=emp_id,
+            title=body.title,
+            day=body.day,
+            start_hour=body.start_hour,
+            end_hour=body.end_hour,
+            event_type=body.event_type,
+            source=body.source,
+            created_at=datetime.now(_tz.utc).isoformat(),
+        )
+        db.add(ev)
+        created.append(_event_dict(ev))
+    db.commit()
+    return {"ok": True, "created": len(created), "events": created}
+
+
+@app.put("/events/{event_id}", tags=["events"])
+def update_event(
+    event_id: str,
+    body: _EventUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(_gcu),
+):
+    if not _can_manage_events(current_user, db):
+        raise HTTPException(status_code=403, detail="Недостаточно прав для редактирования событий")
+    ev = db.query(Event).filter(Event.id == event_id).first()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if body.title is not None:
+        ev.title = body.title
+    if body.day is not None:
+        ev.day = body.day
+    if body.start_hour is not None:
+        ev.start_hour = body.start_hour
+    if body.end_hour is not None:
+        ev.end_hour = body.end_hour
+    if body.event_type is not None:
+        ev.event_type = body.event_type
+    db.commit()
+    return _event_dict(ev)
+
+
+@app.delete("/events/{event_id}", tags=["events"], status_code=204)
+def delete_event(
+    event_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(_gcu),
+):
+    if not _can_manage_events(current_user, db):
+        raise HTTPException(status_code=403, detail="Недостаточно прав для удаления событий")
+    ev = db.query(Event).filter(Event.id == event_id).first()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    db.delete(ev)
+    db.commit()
+
 
 @app.post("/employees/{emp_id}/confirm-actuality", tags=["employees"])
 def confirm_actuality(

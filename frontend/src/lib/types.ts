@@ -34,6 +34,7 @@ export interface CalendarEvent {
   endHour: number
   type: EventType
   source: string
+  createdAt?: string
 }
 
 export type UserRole =
