@@ -1,1 +1,1 @@
-https://images-ext-1.discordapp.net/external/QjDpQDcyjm3Ul_Wc87rYV5j-XwW8ZH5IhQ2UvF3XtVs/https/media.tenor.com/vYawgvFs_8EAAAPo/%25D0%25BF%25D0%25B0%25D0%25BF%25D0%25B8%25D1%2587-miss-the-rage.mp4
+<img width="735" height="490" alt="image" src="https://github.com/user-attachments/assets/2ab8c73b-9f3b-46e1-aad7-b348f7e4dee0" />
